@@ -30,6 +30,7 @@ class ZoneController extends Controller
             'coordinates' => 'required',
             'cash_on_delivery' => 'required_without:digital_payment',
             'digital_payment' => 'required_without:cash_on_delivery',
+            'transfer_payment' => 'required_without:transfer_payment',
         ]);
 
         $value = $request->coordinates;
@@ -51,6 +52,7 @@ class ZoneController extends Controller
         $zone->deliveryman_wise_topic = 'zone_'.$zone_id.'_delivery_man';
         $zone->cash_on_delivery = $request->cash_on_delivery?1:0;
         $zone->digital_payment = $request->digital_payment?1:0;
+        $zone->transfer_payment = $request->transfer_payment?1:0;
         $zone->save();
 
         Toastr::success(translate('messages.zone_added_successfully'));
@@ -108,6 +110,7 @@ class ZoneController extends Controller
         $zone->deliveryman_wise_topic = 'zone_'.$id.'_delivery_man';
         $zone->cash_on_delivery = $request->cash_on_delivery?1:0;
         $zone->digital_payment = $request->digital_payment?1:0;
+        $zone->transfer_payment = $request->transfer_payment?1:0;
         $zone->save();
         Toastr::success(translate('messages.zone_updated_successfully'));
         return redirect()->route('admin.zone.home');

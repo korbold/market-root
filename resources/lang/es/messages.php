@@ -2205,4 +2205,6 @@
   'module_created_successfully' => 'Module created successfully',
   'total_delivered_orders' => 'Total delivered orders',
   'Comida' => 'Comida',
+  'transfer_payment' => 'Transferencia',
+  'transfer payment' => 'Transfer payment',
 );

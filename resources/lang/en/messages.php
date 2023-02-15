@@ -2206,4 +2206,5 @@
   'invalid_latitude_or_longtitude' => 'Invalid latitude or longtitude',
   'amount_received_by' => 'Amount received by',
   '9. Latitude must be a number between -90 to 90 and Longitude must a number between -180 to 180. Otherwise it will create server error' => '9. Latitude must be a number between -90 to 90 and Longitude must a number between -180 to 180. Otherwise it will create server error.',
+  'transfer_payment' => 'Transferencia'
 );

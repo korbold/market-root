@@ -152,7 +152,7 @@ class ConfigController extends Controller
             return response()->json(['errors' => Helpers::error_processor($validator)], 403);
         }
         $point = new Point($request->lat,$request->lng);
-        $zones = Zone::with('modules')->contains('coordinates', $point)->latest()->get(['id', 'status', 'cash_on_delivery', 'digital_payment']);
+        $zones = Zone::with('modules')->contains('coordinates', $point)->latest()->get(['id', 'status', 'cash_on_delivery', 'digital_payment', 'transfer_payment']);
         if(count($zones)<1)
         {
             return response()->json([

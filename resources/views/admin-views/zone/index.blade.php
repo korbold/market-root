@@ -72,6 +72,14 @@
                                             <label class="form-check-label qcont text-dark" for="cash_on_delivery">{{translate('messages.Cash On Delivery')}}</label>
                                         </div>
                                     </div>
+                                    <!-- transferencia -->
+                                    <div class="check-item">
+                                        <div class="form-group form-check form--check">
+                                            <input type="checkbox" name="transfer_payment" value="transfer_payment" class="form-check-input"
+                                                   id="transfer_payment">
+                                            <label class="form-check-label qcont text-dark" for="transfer_payment">{{translate('messages.transfer_payment')}}</label>
+                                        </div>
+                                    </div>
                                     <div class="check-item">
                                         <div class="form-group form-check form--check">
                                             <input type="checkbox" name="digital_payment" value="digital_payment" class="form-check-input"

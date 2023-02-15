@@ -260,7 +260,27 @@ class BusinessSettingsController extends Controller
             Toastr::info(translate('messages.update_option_is_disable_for_demo'));
             return back();
         }
-        if ($name == 'cash_on_delivery') {
+        if ($name == 'transfer_payment') {
+            $payment = BusinessSetting::where('key', 'transfer_payment')->first();
+            if (isset($payment) == false) {
+                DB::table('business_settings')->insert([
+                    'key'        => 'transfer_payment',
+                    'value'      => json_encode([
+                        'status' => $request['status'],
+                    ]),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            } else {
+                DB::table('business_settings')->where(['key' => 'transfer_payment'])->update([
+                    'key'        => 'transfer_payment',
+                    'value'      => json_encode([
+                        'status' => $request['status'],
+                    ]),
+                    'updated_at' => now(),
+                ]);
+            }
+        } else if ($name == 'cash_on_delivery') {
             $payment = BusinessSetting::where('key', 'cash_on_delivery')->first();
             if (isset($payment) == false) {
                 DB::table('business_settings')->insert([
