@@ -20,7 +20,7 @@
                 <img src="{{ asset('public/assets/admin/img/store-report.svg') }}" class="page-header-icon" alt="">
                 <div class="w-0 flex-grow-1 pl-3">
                     <h1 class="page-header-title m-0">
-                        {{ translate('Store Wise Report') }}
+                        {{ translate('Store Report') }}
                     </h1>
                     <span>
                         Monitor store’s <strong class="font-bold text--title">business</strong> analytics & Reports
@@ -33,15 +33,15 @@
         <!-- Page Header Menu -->
         <ul class="nav nav-tabs page-header-tabs mb-2">
             <li class="nav-item">
-                <a href="{{ route('admin.report.store-summary-report') }}"
+                <a href="{{ route('admin.transactions.report.store-summary-report') }}"
                     class="nav-link">{{ translate('Summary Report') }}</a>
             </li>
             <li class="nav-item">
-                <a href="{{ route('admin.report.store-sales-report') }}"
+                <a href="{{ route('admin.transactions.report.store-sales-report') }}"
                     class="nav-link active">{{ translate('Sales Report') }}</a>
             </li>
             <li class="nav-item">
-                <a href="{{ route('admin.report.store-order-report') }}"
+                <a href="{{ route('admin.transactions.report.store-order-report') }}"
                     class="nav-link">{{ translate('Order Report') }}</a>
             </li>
             {{-- <li class="nav-item">
@@ -54,7 +54,7 @@
                 <h5 class="form-label m-0 mb-3">
                     {{ translate('Filter Data') }}
                 </h5>
-                <form action="{{ route('admin.report.set-date') }}" method="post">
+                <form action="{{ route('admin.transactions.report.set-date') }}" method="post">
                     @csrf
                     <div class="row g-3">
                         <div class="col-md-4 col-sm-6">
@@ -144,7 +144,7 @@
                     <img src="{{ asset('/public/assets/admin/img/report/commission.svg') }}" alt="">
                     <div class="info">
                         <h4 class="subtitle">
-                            {{ \App\CentralLogics\Helpers::number_format_short($orders->sum('transaction_sum_admin_commission')+$orders->sum('transaction_sum_admin_expense')-$orders->sum('transaction_sum_delivery_fee_comission')) }}
+                            {{ \App\CentralLogics\Helpers::number_format_short($orders->sum('transaction_sum_admin_commission')+$orders->sum('transaction_sum_delivery_fee_comission')-$orders->sum('transaction_sum_admin_expense')) }}
                         </h4>
                         <h6 class="subtext">{{ translate('Total Commission') }}</h6>
                         {{-- <div class="info-txt d-flex flex-wrap align-items-center flex-wrap">
@@ -295,14 +295,14 @@
                             <span class="dropdown-header">{{ translate('messages.download') }}
                                 {{ translate('messages.options') }}</span>
                             <a id="export-excel" class="dropdown-item"
-                                href="{{ route('admin.report.store-sales-report-export', ['type' => 'excel', request()->getQueryString()]) }}">
+                                href="{{ route('admin.transactions.report.store-sales-report-export', ['type' => 'excel', request()->getQueryString()]) }}">
                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                     src="{{ asset('public/assets/admin') }}/svg/components/excel.svg"
                                     alt="Image Description">
                                 {{ translate('messages.excel') }}
                             </a>
                             <a id="export-csv" class="dropdown-item"
-                                href="{{ route('admin.report.store-sales-report-export', ['type' => 'csv', request()->getQueryString()]) }}">
+                                href="{{ route('admin.transactions.report.store-sales-report-export', ['type' => 'csv', request()->getQueryString()]) }}">
                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                     src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                     alt="Image Description">
@@ -336,7 +336,7 @@
                                     <td>{{ $key + $items->firstItem() }}</td>
                                     <td>
                                         <a class="media align-items-center"
-                                            href="{{ route('admin.item.view', [$item['id']]) }}">
+                                            href="{{ route('admin.item.view', [$item['id'], 'module_id'=>$item['module_id']]) }}">
                                             <div class="media-body">
                                                 <h5 class="text-hover-primary mb-0">{{ $item['name'] }}</h5>
                                             </div>
@@ -353,7 +353,7 @@
                                     </td>
                                     <td>
                                         <div class="btn--container justify-content-center">
-                                            <a href="{{ route('admin.item.view', [$item['id']]) }}"
+                                            <a href="{{ route('admin.item.view', [$item['id'], 'module_id'=>$item['module_id']]) }}"
                                                 class="action-btn btn--primary btn-outline-primary">
                                                 <i class="tio-invisible"></i>
                                             </a>

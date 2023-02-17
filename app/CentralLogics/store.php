@@ -261,7 +261,7 @@ class StoreLogic
                 '#'=>$key+1,
                 translate('messages.name')=>$item->name,
                 translate('messages.quantity')=>$item->orders->sum('quantity'),
-                translate('messages.price')=>$item->orders->sum('price'),
+                translate('messages.gross_sale')=>$item->orders->sum('price'),
                 translate('messages.discount_given')=>$item->orders->sum('discount_on_item'),
 
             ];
@@ -277,11 +277,13 @@ class StoreLogic
             $delivered = $store->orders->where('order_status', 'delivered')->count();
             $canceled = $store->orders->where('order_status', 'canceled')->count();
             $refunded = $store->orders->where('order_status', 'refunded')->count();
+            $total = $store->orders->count();
             $refund_requested = $store->orders->whereNotNull('refund_requested')->count();
             $data[]=[
                 '#'=>$key+1,
                 translate('Store')=>$store->name,
-                translate('Total Order')=>$delivered,
+                translate('Total Order')=>$total,
+                translate('Delivered Order')=>$delivered,
                 translate('Total Amount')=>$store->orders->where('order_status','delivered')->sum('order_amount'),
                 translate('Completion Rate')=>($store->orders->count() > 0 && $delivered > 0)? number_format((100*$delivered)/$store->orders->count(), config('round_up_to_digit')): 0,
                 translate('Ongoing Rate')=>($store->orders->count() > 0 && $delivered > 0)? number_format((100*($store->orders->count()-($delivered+$canceled)))/$store->orders->count(), config('round_up_to_digit')): 0,

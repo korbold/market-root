@@ -16,7 +16,7 @@
             <img src="{{asset('public/assets/admin/img/store-report.svg')}}" class="page-header-icon" alt="">
             <div class="w-0 flex-grow-1 pl-3">
                 <h1 class="page-header-title m-0">
-                    {{translate('Store Wise Report')}}
+                    {{translate('Store Report')}}
                 </h1>
                 <span>
                     Monitor store’s  <strong class="font-bold text--title">business</strong> analytics & Reports
@@ -29,10 +29,10 @@
     <!-- Page Header Menu -->
     <ul class="nav nav-tabs page-header-tabs mb-2">
         <li class="nav-item">
-            <a href="{{route('admin.report.store-summary-report')}}" class="nav-link active">{{translate('Summary Report')}}</a>
+            <a href="{{route('admin.transactions.report.store-summary-report')}}" class="nav-link active">{{translate('Summary Report')}}</a>
         </li>
         <li class="nav-item">
-            <a href="{{route('admin.report.store-sales-report')}}" class="nav-link">{{translate('Sales Report')}}</a>
+            <a href="{{route('admin.transactions.report.store-sales-report')}}" class="nav-link">{{translate('Sales Report')}}</a>
         </li>
         <li class="nav-item">
             <a href="{{ route('admin.report.store-order-report') }}" class="nav-link">{{translate('Order Report')}}</a>
@@ -74,7 +74,7 @@
                 <img src="{{asset('/public/assets/admin/img/report/store.svg')}}" alt="">
                 <div class="info">
                     <h4 class="subtitle">{{ $new_stores }}</h4>
-                    <h6 class="subtext">{{ translate('messages.New Registered Stores') }}</h6>
+                    <h6 class="subtext">{{ translate('messages.Registered Stores') }}</h6>
                 </div>
             </div>
             <div class="left-content-card">
@@ -249,13 +249,13 @@
                         class="hs-unfold-content dropdown-unfold dropdown-menu dropdown-menu-sm-right">
                         <span class="dropdown-header">{{ translate('messages.download') }}
                             {{ translate('messages.options') }}</span>
-                        <a id="export-excel" class="dropdown-item" href="{{route('admin.report.store-summary-report-export', ['type'=>'excel',request()->getQueryString()])}}">
+                        <a id="export-excel" class="dropdown-item" href="{{route('admin.transactions.report.store-summary-report-export', ['type'=>'excel',request()->getQueryString()])}}">
                             <img class="avatar avatar-xss avatar-4by3 mr-2"
                                 src="{{ asset('public/assets/admin') }}/svg/components/excel.svg"
                                 alt="Image Description">
                             {{ translate('messages.excel') }}
                         </a>
-                        <a id="export-csv" class="dropdown-item" href="{{route('admin.report.store-summary-report-export', ['type'=>'csv',request()->getQueryString()])}}">
+                        <a id="export-csv" class="dropdown-item" href="{{route('admin.transactions.report.store-summary-report-export', ['type'=>'csv',request()->getQueryString()])}}">
                             <img class="avatar avatar-xss avatar-4by3 mr-2"
                                 src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                 alt="Image Description">
@@ -284,7 +284,7 @@
                         </tr>
                     </thead>
                     <tbody id="set-rows">
-                        @foreach ($stores as $k => $store)
+                    @foreach ($stores as $k => $store)
                         @php($delivered = $store->orders->where('order_status', 'delivered')->count())
                         @php($canceled = $store->orders->where('order_status', 'canceled')->count())
                         @php($refunded = $store->orders->where('order_status', 'refunded')->count())
@@ -292,7 +292,7 @@
                         <tr>
                             <td>{{$k+$stores->firstItem()}}</td>
                             <td>
-                                <a href="{{route('admin.store.view', $store->id)}}">{{ $store->name }}</a>
+                                <a href="{{route('admin.store.view', [$store->id, 'module_id'=>$store->module_id])}}">{{ $store->name }}</a>
                             </td>
                             <td class="text-center">
                                 {{ $store->orders->count() }}
@@ -300,10 +300,10 @@
                             <td class="text-center">
                                 {{ $delivered }}
                             </td>
-                            <td class="text-center">
+                            <td class="text-center white-space-nowrap">
                                 {{\App\CentralLogics\Helpers::number_format_short($store->orders->where('order_status','delivered')->sum('order_amount'))}}
                             </td>
-                            <td class="text-center">
+                            <td class="text-center white-space-nowrap">
                                 {{ ($store->orders->count() > 0 && $delivered > 0)? number_format((100*$delivered)/$store->orders->count(), config('round_up_to_digit')): 0 }}%
                             </td>
                             <td class="text-center">
@@ -317,13 +317,13 @@
                             </td>
                             <td>
                                 <div class="btn--container justify-content-center">
-                                    <a href="{{route('admin.store.view', $store->id)}}" class="action-btn btn--primary btn-outline-primary">
+                                    <a href="{{route('admin.store.view', [$store->id, 'module_id'=>$store->module_id])}}" class="action-btn btn--primary btn-outline-primary">
                                         <i class="tio-invisible"></i>
                                     </a>
                                 </div>
                             </td>
                         </tr>
-                        @endforeach
+                    @endforeach
                     </tbody>
                 </table>
             </div>
@@ -428,7 +428,7 @@
                 }
             });
             $.post({
-                url: '{{route('admin.report.store-summary-report-search',request()->getQueryString())}}',
+                url: '{{route('admin.transactions.report.store-summary-report-search',request()->getQueryString())}}',
                 data: formData,
                 cache: false,
                 contentType: false,

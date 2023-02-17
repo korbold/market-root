@@ -66,7 +66,7 @@
                                 </div>
                             </div>
                         @endif
-                        <div class="form-group mb-0">
+                        {{-- <div class="form-group mb-0">
                             <label class="input-label">{{translate('messages.module')}}</label>
                             <select name="module_id" id="module_id" required class="form-control js-select2-custom"  data-placeholder="{{translate('messages.select')}} {{translate('messages.module')}}">
                                     <option value="" selected disabled>{{translate('messages.select')}} {{translate('messages.module')}}</option>
@@ -74,7 +74,7 @@
                                     <option value="{{$module->id}}" >{{$module->module_name}}</option>
                                 @endforeach
                             </select>
-                        </div>
+                        </div> --}}
                         <input name="position" value="0" class="initial-hidden">
                     </div>
                     <div class="col-md-6">
@@ -125,7 +125,7 @@
                         {{translate('messages.parcel_category')}} {{translate('messages.list')}}
                         <span class="badge badge-soft-dark ml-2" id="itemCount">{{$parcel_categories->total()}}</span>
                     </h5>
-                    <div class="min--240">
+                    {{-- <div class="min--240">
                         <select name="module_id" class="form-control js-select2-custom" onchange="set_filter('{{url()->full()}}',this.value,'module_id')" title="{{translate('messages.select')}} {{translate('messages.modules')}}">
                             <option value="" {{!request('module_id') ? 'selected':''}}>{{translate('messages.all')}} {{translate('messages.modules')}}</option>
                             @foreach (\App\Models\Module::Parcel()->get() as $module)
@@ -135,7 +135,7 @@
                                 </option>
                             @endforeach
                         </select>
-                    </div>
+                    </div> --}}
                 </div>
 
                 {{--<form id="dataSearch" class="col">

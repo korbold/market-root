@@ -6,7 +6,7 @@
     <td>
         @if($wr->vendor)
         <a class="deco-none"
-            href="{{route('admin.store.view',[$wr->vendor['id']])}}">{{ Str::limit($wr->vendor->stores[0]->name, 20, '...') }}</a>
+            href="{{route('admin.store.view',[$wr->vendor['id'],'module_id'=>$wr->vendor->stores[0]->module_id])}}">{{ Str::limit($wr->vendor->stores[0]->name, 20, '...') }}</a>
         @else
         {{translate('messages.store deleted!') }}
         @endif
@@ -23,7 +23,7 @@
     </td>
     <td>
         @if($wr->vendor)
-        <a href="{{route('admin.store.withdraw_view',[$wr['id'],$wr->vendor['id']])}}"
+        <a href="{{route('admin.transactions.store.withdraw_view',[$wr['id'],$wr->vendor['id']])}}"
             class="btn action-btn btn--warning btn-outline-warning"><i class="tio-visible-outlined"></i>
         </a>
         @else

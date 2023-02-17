@@ -23,7 +23,7 @@
         <div class="col-md-12">
             <div class="card">
                 <div class="card-body">
-                    <form action="{{route('admin.custom-role.create')}}" method="post">
+                    <form action="{{route('admin.users.custom-role.create')}}" method="post">
                         @csrf
                         <div class="form-group">
                             <label class="input-label qcont" for="name">{{translate('messages.role_name')}}</label>
@@ -45,58 +45,58 @@
                                 <div class="form-group form-check form--check">
                                     <input type="checkbox" name="modules[]" value="account" class="form-check-input"
                                            id="account">
-                                    <label class="form-check-label qcont text-dark" for="account">{{translate('messages.collect')}} {{translate('messages.cash')}}</label>
+                                    <label class="form-check-label qcont text-dark" for="account">{{translate('messages.collect')}} {{translate('messages.Cash')}}</label>
                                 </div>
                             </div>
                             <div class="check-item">
                                 <div class="form-group form-check form--check">
                                     <input type="checkbox" name="modules[]" value="addon" class="form-check-input"
                                            id="addon">
-                                    <label class="form-check-label qcont text-dark" for="addon">{{translate('messages.addon')}}</label>
+                                    <label class="form-check-label qcont text-dark" for="addon">{{translate('messages.addons')}}</label>
                                 </div>
                             </div>
                             <div class="check-item">
                                 <div class="form-group form-check form--check">
                                     <input type="checkbox" name="modules[]" value="attribute" class="form-check-input"
                                            id="attribute">
-                                    <label class="form-check-label qcont text-dark" for="attribute">{{translate('messages.attribute')}}</label>
+                                    <label class="form-check-label qcont text-dark" for="attribute">{{translate('messages.attributes')}}</label>
                                 </div>
                             </div>
                             <div class="check-item">
                                 <div class="form-group form-check form--check">
                                     <input type="checkbox" name="modules[]" value="banner" class="form-check-input"
                                            id="banner">
-                                    <label class="form-check-label qcont text-dark" for="banner">{{translate('messages.banner')}}</label>
+                                    <label class="form-check-label qcont text-dark" for="banner">{{translate('messages.banners')}}</label>
                                 </div>
                             </div>
                             <div class="check-item">
                                 <div class="form-group form-check form--check">
                                     <input type="checkbox" name="modules[]" value="campaign" class="form-check-input"
                                            id="campaign">
-                                    <label class="form-check-label qcont text-dark" for="campaign">{{translate('messages.campaign')}}</label>
+                                    <label class="form-check-label qcont text-dark" for="campaign">{{translate('messages.campaigns')}}</label>
                                 </div>
                             </div>
                             <div class="check-item">
                                 <div class="form-group form-check form--check">
                                     <input type="checkbox" name="modules[]" value="category" class="form-check-input"
                                            id="category">
-                                    <label class="form-check-label qcont text-dark" for="category">{{translate('messages.category')}}</label>
+                                    <label class="form-check-label qcont text-dark" for="category">{{translate('messages.categories')}}</label>
                                 </div>
                             </div>
                             <div class="check-item">
                                 <div class="form-group form-check form--check">
                                     <input type="checkbox" name="modules[]" value="coupon" class="form-check-input"
                                            id="coupon">
-                                    <label class="form-check-label qcont text-dark" for="coupon">{{translate('messages.coupon')}}</label>
+                                    <label class="form-check-label qcont text-dark" for="coupon">{{translate('messages.coupons')}}</label>
                                 </div>
                             </div>
-                            <div class="check-item">
+                            {{-- <div class="check-item">
                                 <div class="form-group form-check form--check">
                                     <input type="checkbox" name="modules[]" value="custom_role" class="form-check-input"
                                            id="custom_role">
                                     <label class="form-check-label qcont text-dark" for="custom_role">{{translate('messages.custom_role')}}</label>
                                 </div>
-                            </div>
+                            </div> --}}
                             <div class="check-item">
                                 <div class="form-group form-check form--check">
                                     <input type="checkbox" name="modules[]" value="customerList" class="form-check-input"
@@ -122,28 +122,28 @@
                                 <div class="form-group form-check form--check">
                                     <input type="checkbox" name="modules[]" value="employee" class="form-check-input"
                                            id="employee">
-                                    <label class="form-check-label qcont text-dark" for="employee">{{translate('messages.Employee')}}</label>
+                                    <label class="form-check-label qcont text-dark" for="employee">{{translate('messages.Employees')}}</label>
                                 </div>
                             </div>
                             <div class="check-item">
                                 <div class="form-group form-check form--check">
                                     <input type="checkbox" name="modules[]" value="item" class="form-check-input"
                                            id="item">
-                                    <label class="form-check-label qcont text-dark" for="item">{{translate('messages.item')}}</label>
+                                    <label class="form-check-label qcont text-dark" for="item">{{translate('messages.items')}}</label>
                                 </div>
                             </div>
                             <div class="check-item">
                                 <div class="form-group form-check form--check">
                                     <input type="checkbox" name="modules[]" value="notification" class="form-check-input"
                                            id="notification">
-                                    <label class="form-check-label qcont text-dark" for="notification">{{translate('messages.push')}} {{translate('messages.notification')}} </label>
+                                    <label class="form-check-label qcont text-dark" for="notification">{{translate('messages.notification_settings')}}</label>
                                 </div>
                             </div>
                             <div class="check-item">
                                 <div class="form-group form-check form--check">
                                     <input type="checkbox" name="modules[]" value="order" class="form-check-input"
                                            id="order">
-                                    <label class="form-check-label qcont text-dark" for="order">{{translate('messages.order')}}</label>
+                                    <label class="form-check-label qcont text-dark" for="order">{{translate('messages.orders')}}</label>
                                 </div>
                             </div>
                             <div class="check-item">
@@ -157,7 +157,7 @@
                                 <div class="form-group form-check form--check">
                                     <input type="checkbox" name="modules[]" value="report" class="form-check-input"
                                             id="report">
-                                    <label class="form-check-label qcont text-dark" for="report">{{translate('messages.report')}}</label>
+                                    <label class="form-check-label qcont text-dark" for="report">{{translate('messages.reports')}}</label>
                                 </div>
                             </div>
                             <div class="check-item">
@@ -179,14 +179,14 @@
                                 <div class="form-group form-check form--check">
                                     <input type="checkbox" name="modules[]" value="zone" class="form-check-input"
                                            id="zone">
-                                    <label class="form-check-label qcont text-dark" for="zone">{{translate('messages.zone')}}</label>
+                                    <label class="form-check-label qcont text-dark" for="zone">{{translate('messages.zone_setup')}}</label>
                                 </div>
                             </div>
                             <div class="check-item">
                                 <div class="form-group form-check form--check">
                                     <input type="checkbox" name="modules[]" value="module" class="form-check-input"
                                            id="module_system">
-                                    <label class="form-check-label qcont text-dark" for="module_system">{{translate('messages.module')}}</label>
+                                    <label class="form-check-label qcont text-dark" for="module_system">{{translate('messages.system_module_setup')}}</label>
                                 </div>
                             </div>
                             <div class="check-item">
@@ -207,7 +207,7 @@
                                 <div class="form-group form-check form--check">
                                     <input type="checkbox" name="modules[]" value="unit" class="form-check-input"
                                            id="unit">
-                                    <label class="form-check-label qcont text-dark" for="unit">{{translate('messages.unit')}}</label>
+                                    <label class="form-check-label qcont text-dark" for="unit">{{translate('messages.units')}}</label>
                                 </div>
                             </div>
                         </div>
@@ -330,13 +330,13 @@
                                     <td>
                                         <div class="btn--container justify-content-center">
                                             <a class="btn action-btn btn--primary btn-outline-primary"
-                                                href="{{route('admin.custom-role.edit',[$r['id']])}}" title="{{translate('messages.edit')}} {{translate('messages.role')}}"><i class="tio-edit"></i>
+                                                href="{{route('admin.users.custom-role.edit',[$r['id']])}}" title="{{translate('messages.edit')}} {{translate('messages.role')}}"><i class="tio-edit"></i>
                                             </a>
                                             <a class="btn action-btn btn--danger btn-outline-danger" href="javascript:"
                                                 onclick="form_alert('role-{{$r['id']}}','{{translate('messages.Want_to_delete_this_role')}}')" title="{{translate('messages.delete')}} {{translate('messages.role')}}"><i class="tio-delete-outlined"></i>
                                             </a>
                                         </div>
-                                        <form action="{{route('admin.custom-role.delete',[$r['id']])}}"
+                                        <form action="{{route('admin.users.custom-role.delete',[$r['id']])}}"
                                                 method="post" id="role-{{$r['id']}}">
                                             @csrf @method('delete')
                                         </form>
@@ -378,7 +378,7 @@
                 }
             });
             $.post({
-                url: '{{route('admin.custom-role.search')}}',
+                url: '{{route('admin.users.custom-role.search')}}',
                 data: formData,
                 cache: false,
                 contentType: false,

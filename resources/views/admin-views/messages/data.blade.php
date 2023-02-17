@@ -18,7 +18,7 @@
                     <span class=" mr-3">{{$user['f_name'].' '.$user['l_name']}}</span> <span
                         class="{{$unchecked ? 'badge badge-info' : ''}}">{{$unchecked ? $unchecked : ''}}</span>
                 </h5>
-                <span>{{ $user['phone'] }}</span>
+                <span dir="ltr">{{ $user['phone'] }}</span>
             </div>
         </div>
     @else

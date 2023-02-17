@@ -2,13 +2,18 @@
 
 namespace App\Http\Controllers\Vendor;
 
+use App\CentralLogics\CouponLogic;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\CentralLogics\Helpers;
 use App\CentralLogics\OrderLogic;
+use App\Models\BusinessSetting;
+use App\Models\Coupon;
 use App\Models\Order;
+use App\Models\Store;
 use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 class OrderController extends Controller
 {
@@ -281,6 +286,128 @@ class OrderController extends Controller
         ]);
 
         Toastr::success('Payment reference code is added!');
+        return back();
+    }
+
+    public function edit_order_amount(Request $request)
+    {
+        $request->validate([
+            'order_amount' => 'required',
+
+        ]);
+
+        $order = Order::find($request->order_id);
+        $store = Store::find($order->store_id);
+        $coupon = null;
+        $free_delivery_by = null;
+        if ($order->coupon_code) {
+            $coupon = Coupon::active()->where(['code' => $order->coupon_code])->first();
+            if (isset($coupon)) {
+                $staus = CouponLogic::is_valide($coupon, $order->user_id, $order->store_id);
+                if ($staus == 407) {
+                    return response()->json([
+                        'errors' => [
+                            ['code' => 'coupon', 'message' => translate('messages.coupon_expire')]
+                        ]
+                    ], 407);
+                } else if ($staus == 406) {
+                    return response()->json([
+                        'errors' => [
+                            ['code' => 'coupon', 'message' => translate('messages.coupon_usage_limit_over')]
+                        ]
+                    ], 406);
+                } else if ($staus == 404) {
+                    return response()->json([
+                        'errors' => [
+                            ['code' => 'coupon', 'message' => translate('messages.not_found')]
+                        ]
+                    ], 404);
+                }
+            } else {
+                return response()->json([
+                    'errors' => [
+                        ['code' => 'coupon', 'message' => translate('messages.not_found')]
+                    ]
+                ], 404);
+            }
+        }
+        $product_price = $request->order_amount;
+        $total_addon_price = 0;
+        $store_discount_amount = $order->store_discount_amount;
+        if($store_discount_amount == 0){
+            $store_discount = Helpers::get_store_discount($store);
+            if (isset($store_discount)) {
+                if ($product_price + $total_addon_price < $store_discount['min_purchase']) {
+                    $store_discount_amount = 0;
+                }
+    
+                if ($store_discount['max_discount'] != 0 && $store_discount_amount > $store_discount['max_discount']) {
+                    $store_discount_amount = $store_discount['max_discount'];
+                }
+            }
+        }
+
+        $coupon_discount_amount = $coupon ? CouponLogic::get_discount($coupon, $product_price + $total_addon_price - $store_discount_amount) : 0;
+        $total_price = $product_price + $total_addon_price - $store_discount_amount - $coupon_discount_amount;
+
+        $tax = $store->tax;
+        $total_tax_amount = ($tax > 0) ? (($total_price * $tax) / 100) : 0;
+
+        $free_delivery_over = BusinessSetting::where('key', 'free_delivery_over')->first()->value;
+        if (isset($free_delivery_over)) {
+            if ($free_delivery_over <= $product_price + $total_addon_price - $coupon_discount_amount - $store_discount_amount) {
+                $order->delivery_charge = 0;
+                $free_delivery_by = 'admin';
+            }
+        }
+
+        if ($store->free_delivery) {
+            $order->delivery_charge = 0;
+            $free_delivery_by = 'vendor';
+        }
+
+        if ($coupon) {
+            if ($coupon->coupon_type == 'free_delivery') {
+                if ($coupon->min_purchase <= $product_price + $total_addon_price - $store_discount_amount) {
+                    $order->delivery_charge = 0;
+                    $free_delivery_by = 'admin';
+                }
+            }
+            $coupon->increment('total_uses');
+        }
+
+        $order->coupon_discount_amount = round($coupon_discount_amount, config('round_up_to_digit'));
+        $order->coupon_discount_title = $coupon ? $coupon->title : '';
+
+        $order->store_discount_amount = round($store_discount_amount, config('round_up_to_digit'));
+        $order->total_tax_amount = round($total_tax_amount, config('round_up_to_digit'));
+        $order->order_amount = round($total_price + $total_tax_amount + $order->delivery_charge, config('round_up_to_digit'));
+        $order->free_delivery_by = $free_delivery_by;
+        $order->order_amount = $order->order_amount + $order->dm_tips;
+        $order->save();
+
+        Toastr::success(translate('messages.order_amount_updated'));
+        return back();
+    }
+    public function edit_discount_amount(Request $request)
+    {
+        $request->validate([
+            'discount_amount' => 'required',
+
+        ]);
+
+        $order = Order::find($request->order_id);
+        $product_price = $order['order_amount']-$order['delivery_charge']-$order['total_tax_amount']-$order['dm_tips']+$order->store_discount_amount;
+        if($request->discount_amount > $product_price)
+        {
+            Toastr::error(translate('messages.discount_amount_is_greater_then_product_amount'));
+            return back();
+        }
+        $order->store_discount_amount = round($request->discount_amount, config('round_up_to_digit'));
+        $order->order_amount = $product_price+$order['delivery_charge']+$order['total_tax_amount']+$order['dm_tips'] -$order->store_discount_amount;
+        $order->save();
+
+        Toastr::success(translate('messages.discount_amount_updated'));
         return back();
     }
 }

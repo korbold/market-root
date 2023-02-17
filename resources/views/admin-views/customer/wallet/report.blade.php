@@ -31,7 +31,7 @@
                 </h4>
             </div>
             <div class="card-body">
-                <form action="{{route('admin.customer.wallet.report')}}" method="get">
+                <form action="{{route('admin.users.customer.wallet.report')}}" method="get">
                     <div class="row g-3">
                         <div class="col-sm-6">
                             <input type="date" name="from" id="from_date" value="{{request()->get('from')}}" class="form-control" title="{{__('messages.from')}} {{__('messages.date')}}">
@@ -162,7 +162,7 @@
                             <tr scope="row">
                                 <td >{{$k+$transactions->firstItem()}}</td>
                                 <td>{{$wt->transaction_id}}</td>
-                                <td><a href="{{route('admin.customer.view',['user_id'=>$wt->user_id])}}">{{Str::limit($wt->user?$wt->user->f_name.' '.$wt->user->l_name:__('messages.not_found'),20,'...')}}</a></td>
+                                <td><a href="{{route('admin.users.customer.view',['user_id'=>$wt->user_id])}}">{{Str::limit($wt->user?$wt->user->f_name.' '.$wt->user->l_name:__('messages.not_found'),20,'...')}}</a></td>
                                 <td>{{$wt->credit}}</td>
                                 <td>{{$wt->debit}}</td>
                                 <td>{{$wt->balance}}</td>
@@ -224,7 +224,7 @@
         $(document).on('ready', function () {
             $('.js-data-example-ajax').select2({
                 ajax: {
-                    url: '{{route('admin.customer.select-list')}}',
+                    url: '{{route('admin.users.customer.select-list')}}',
                     data: function (params) {
                         return {
                             q: params.term, // search term

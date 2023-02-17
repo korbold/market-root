@@ -2,14 +2,16 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\DeliveryMan;
-use App\Models\ProvideDMEarning;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Http\Request;
 use App\CentralLogics\Helpers;
+use App\Models\ProvideDMEarning;
+use App\Models\AccountTransaction;
 use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Controller;
+use Brian2694\Toastr\Facades\Toastr;
 use Rap2hpoutre\FastExcel\FastExcel;
+use Illuminate\Support\Facades\Validator;
 
 class ProvideDMEarningController extends Controller
 {
@@ -135,11 +137,11 @@ class ProvideDMEarningController extends Controller
     }
 
     public function dm_earning_list_export(Request $request){
-        $withdraw_request = ProvideDMEarning::all();
+        $dm_earnings = ProvideDMEarning::latest()->get();
         if($request->type == 'excel'){
-            return (new FastExcel($withdraw_request))->download('ProvideDMEarning.xlsx');
+            return (new FastExcel(Helpers::export_dm_earning($dm_earnings)))->download('ProvideDMEarning.xlsx');
         }elseif($request->type == 'csv'){
-            return (new FastExcel($withdraw_request))->download('ProvideDMEarning.csv');
+            return (new FastExcel(Helpers::export_dm_earning($dm_earnings)))->download('ProvideDMEarning.csv');
         }
     }
 

@@ -108,6 +108,10 @@ class DeliveryMan extends Authenticatable
     {
         return $query->where('active', 1)->where('application_status','approved');
     }
+    public function scopeInActive($query)
+    {
+        return $query->where('active', 0)->where('application_status','approved');
+    }
 
     public function scopeEarning($query)
     {
@@ -117,6 +121,11 @@ class DeliveryMan extends Authenticatable
     public function scopeAvailable($query)
     {
         return $query->where('current_orders', '<' ,config('dm_maximum_orders')??1);
+    }
+
+    public function scopeUnavailable($query)
+    {
+        return $query->where('current_orders', '>' ,config('dm_maximum_orders')??1);
     }
 
     public function scopeZonewise($query)

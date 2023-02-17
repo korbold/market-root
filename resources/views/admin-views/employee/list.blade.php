@@ -17,7 +17,7 @@
                     {{translate('messages.Employee')}} {{translate('messages.list')}}
                 </span>
             </h1>
-            <a href="{{route('admin.employee.add-new')}}" class="btn btn--primary mb-3">
+            <a href="{{route('admin.users.employee.add-new')}}" class="btn btn--primary mb-3">
                 <i class="tio-add-circle"></i>
                 <span class="text">{{translate('messages.add')}} {{translate('messages.new')}}</span>
             </a>
@@ -73,13 +73,13 @@
                                     <td>
                                         <div class="btn--container justify-content-center">
                                             <a class="btn action-btn btn--primary btn-outline-primary"
-                                                href="{{route('admin.employee.edit',[$e['id']])}}" title="{{translate('messages.edit')}} {{translate('messages.Employee')}}"><i class="tio-edit"></i>
+                                                href="{{route('admin.users.employee.edit',[$e['id']])}}" title="{{translate('messages.edit')}} {{translate('messages.Employee')}}"><i class="tio-edit"></i>
                                             </a>
                                             <a class="btn action-btn btn--danger btn-outline-danger" href="javascript:"
                                                 onclick="form_alert('employee-{{$e['id']}}','{{translate('messages.Want_to_delete_this_role')}}')" title="{{translate('messages.delete')}} {{translate('messages.Employee')}}"><i class="tio-delete-outlined"></i>
                                             </a>
                                         </div>
-                                        <form action="{{route('admin.employee.delete',[$e['id']])}}"
+                                        <form action="{{route('admin.users.employee.delete',[$e['id']])}}"
                                                 method="post" id="employee-{{$e['id']}}">
                                             @csrf @method('delete')
                                         </form>
@@ -125,7 +125,7 @@
                 }
             });
             $.post({
-                url: '{{route('admin.employee.search')}}',
+                url: '{{route('admin.users.employee.search')}}',
                 data: formData,
                 cache: false,
                 contentType: false,

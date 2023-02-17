@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 
-@section('title',translate('messages.item_wise_report'))
+@section('title',translate('messages.item_report'))
 
 @push('css_or_js')
 
@@ -20,16 +20,99 @@
                     <img src="{{asset('public/assets/admin/img/report.png')}}" class="w--22" alt="">
                 </span>
                 <span>
-                    {{translate('messages.item_wise_report')}} <span class="h6 mb-0 badge badge-soft-success ml-2" id="itemCount">( {{session('from_date')}} - {{session('to_date')}} )</span>
+                    {{translate('messages.item_report')}} 
+                    @if (isset($filter) && $filter != 'all_time')
+                    <span class="mb-0 h6 badge badge-soft-success ml-2"
+                        id="itemCount">( {{ session('from_date') }} - {{ session('to_date') }} )</span>
+                        @endif
                 </span>
             </h1>
         </div>
         <!-- End Page Header -->
 
-        <div class="card">
+        <div class="card mb-20">
+            <div class="card-body">
+                <h4 class="">{{translate('Search Data')}}</h4>
+                <form action="{{route('admin.transactions.report.set-date')}}" method="post">
+                    @csrf
+                <div class="row g-3">
+                    <div class="col-sm-6 col-md-3">
+                        <select name="module_id" class="form-control js-select2-custom" onchange="set_filter('{{url()->full()}}',this.value,'module_id')" title="{{translate('messages.select')}} {{translate('messages.modules')}}">
+                            <option value="" {{!request('module_id') ? 'selected':''}}>{{translate('messages.all')}} {{translate('messages.modules')}}</option>
+                            @foreach (\App\Models\Module::notParcel()->get() as $module)
+                                <option
+                                    value="{{$module->id}}" {{request('module_id') == $module->id?'selected':''}}>
+                                    {{$module['module_name']}}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-sm-6 col-md-3">
+                        <select name="zone_id" class="form-control js-select2-custom"
+                        onchange="set_zone_filter('{{url()->full()}}',this.value)" id="zone">
+                    <option value="all">{{ translate('messages.All Zones') }}</option>
+                    @foreach(\App\Models\Zone::orderBy('name')->get() as $z)
+                        <option
+                            value="{{$z['id']}}" {{isset($zone) && $zone->id == $z['id']?'selected':''}}>
+                            {{$z['name']}}
+                        </option>
+                    @endforeach
+                </select>
+                    </div>
+                    <div class="col-sm-6 col-md-3">
+                        <select name="store_id" onchange="set_store_filter('{{url()->full()}}',this.value)" data-placeholder="{{translate('messages.select')}} {{translate('messages.store')}}" class="js-data-example-ajax form-control">
+                            @if(isset($store))
+                            <option value="{{$store->id}}" selected>{{$store->name}}</option>
+                            @else
+                            <option value="all" selected>{{translate('messages.all')}} {{translate('messages.stores')}}</option>
+                            @endif
+                        </select>
+                    </div>
+                    <div class="col-sm-6 col-md-3">
+                        <select name="category_id" id="category_id" onchange="set_category_filter('{{url()->full()}}',this.value)"
+                        class="js-data-example-ajax form-control" id="category_id">
+                        @if(isset($category))
+                        <option value="{{$category->id}}" selected>{{$category->name}}</option>
+                        @else
+                        <option value="all" selected>{{ translate('messages.All Categories') }}</option>
+                        @endif
+                    </select>
+                    </div>
+                    <div class="col-sm-6 col-md-3">
+                        <select class="form-control" name="filter" onchange="set_time_filter('{{ url()->full() }}',this.value)">
+                            <option value="all_time" {{ isset($filter) && $filter == "all_time" ? 'selected' : '' }}>{{ translate('messages.All Time') }}</option>
+                            <option value="this_year" {{ isset($filter) && $filter == "this_year" ? 'selected' : '' }}>{{ translate('messages.This Year') }}</option>
+                            <option value="previous_year" {{ isset($filter) && $filter == "previous_year" ? 'selected' : '' }}>{{ translate('messages.Previous Year') }}</option>
+                            <option value="this_month" {{ isset($filter) && $filter == "this_month" ? 'selected' : '' }}>{{ translate('messages.This Month') }}</option>
+                            <option value="this_week" {{ isset($filter) && $filter == "this_week" ? 'selected' : '' }}>{{ translate('messages.This Week') }}</option>
+                            <option value="custom" {{ isset($filter) && $filter == 'custom' ? 'selected' : '' }}>
+                                {{ translate('messages.Custom') }}</option>
+                        </select>
+                    </div>
+                    @if (isset($filter) && $filter == 'custom')
+                    <div class="col-sm-6 col-md-3">
+
+                            <input type="date" name="from" id="from_date" class="form-control" placeholder="{{ translate('Start Date') }}" {{session()->has('from_date')?'value='.session('from_date'):''}} required>
+
+                    </div>
+                    <div class="col-sm-6 col-md-3">
+
+                            <input type="date" name="to" id="to_date" class="form-control" placeholder="{{ translate('End Date') }}" {{session()->has('to_date')?'value='.session('to_date'):''}} required>
+
+                    </div>
+                    @endif
+                    <div class="col-sm-6 col-md-3 ml-auto">
+                        <button type="submit" class="btn btn-primary btn-block h--45px">{{translate('Filter')}}</button>
+                    </div>
+                </div>
+            </form>
+            </div>
+        </div>
+
+        {{-- <div class="card">
             <div class="card-body">
                 <div class="report-card-inner mb-3 pt-3">
-                    <form action="{{route('admin.report.set-date')}}" method="post">
+                    <form action="{{route('admin.transactions.report.set-date')}}" method="post">
                         @csrf
                         <div class="row g-3">
                             <div class="col-md-4 col-sm-6">
@@ -79,7 +162,7 @@
                     </form>
                 </div>
             </div>
-        </div>
+        </div> --}}
         <!-- End Stats -->
         <!-- Card -->
         <div class="row card mt-4">
@@ -87,7 +170,7 @@
             <div class="card-header border-0 py-2">
                 <div class="search--button-wrapper">
                     <h3 class="card-title">
-                        {{translate('Item wise report table')}}<span class="badge badge-soft-secondary" id="countItems">{{ $items->total() }}</span>
+                        {{translate('Item report table')}}<span class="badge badge-soft-secondary" id="countItems">{{ $items->total() }}</span>
                     </h3>
                     <form id="search-form" class="search-form">
                     @csrf
@@ -109,40 +192,20 @@
 
                         <div id="usersExportDropdown"
                             class="hs-unfold-content dropdown-unfold dropdown-menu dropdown-menu-sm-right">
-                            {{-- <span class="dropdown-header">{{ translate('messages.options') }}</span>
-                            <a id="export-copy" class="dropdown-item" href="javascript:;">
-                                <img class="avatar avatar-xss avatar-4by3 mr-2"
-                                    src="{{ asset('public/assets/admin') }}/svg/illustrations/copy.svg"
-                                    alt="Image Description">
-                                {{ translate('messages.copy') }}
-                            </a>
-                            <a id="export-print" class="dropdown-item" href="javascript:;">
-                                <img class="avatar avatar-xss avatar-4by3 mr-2"
-                                    src="{{ asset('public/assets/admin') }}/svg/illustrations/print.svg"
-                                    alt="Image Description">
-                                {{ translate('messages.print') }}
-                            </a>
-                            <div class="dropdown-divider"></div> --}}
                             <span class="dropdown-header">{{ translate('messages.download') }}
                                 {{ translate('messages.options') }}</span>
-                            <a id="export-excel" class="dropdown-item" href="{{route('admin.report.item-wise-export', ['type'=>'excel',request()->getQueryString()])}}">
+                            <a id="export-excel" class="dropdown-item" href="{{route('admin.transactions.report.item-wise-export', ['type'=>'excel',request()->getQueryString()])}}">
                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                     src="{{ asset('public/assets/admin') }}/svg/components/excel.svg"
                                     alt="Image Description">
                                 {{ translate('messages.excel') }}
                             </a>
-                            <a id="export-csv" class="dropdown-item" href="{{route('admin.report.item-wise-export', ['type'=>'csv',request()->getQueryString()])}}">
+                            <a id="export-csv" class="dropdown-item" href="{{route('admin.transactions.report.item-wise-export', ['type'=>'csv',request()->getQueryString()])}}">
                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                     src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                     alt="Image Description">
                                 .{{ translate('messages.csv') }}
                             </a>
-                            {{-- <a id="export-pdf" class="dropdown-item" href="javascript:;">
-                                <img class="avatar avatar-xss avatar-4by3 mr-2"
-                                    src="{{ asset('public/assets/admin') }}/svg/components/pdf.svg"
-                                    alt="Image Description">
-                                {{ translate('messages.pdf') }}
-                            </a> --}}
                         </div>
                     </div>
                     <!-- End Unfold -->
@@ -175,9 +238,14 @@
                     <tr>
                         <th>{{translate('sl')}}</th>
                         <th class="w--2">{{translate('messages.name')}}</th>
+                        <th class="w--2">{{translate('messages.module')}}</th>
                         <th class="w--2">{{translate('messages.store')}}</th>
-                        <th>{{translate('messages.zone')}}</th>
                         <th>{{translate('messages.order')}} {{translate('messages.count')}}</th>
+                        <th>{{translate('messages.price')}}</th>
+                        <th>{{translate('messages.total_amount_sold')}}</th>
+                        <th>{{translate('messages.total_discount_given')}}</th>
+                        <th>{{translate('messages.average_sale_value')}}</th>
+                        <th>{{translate('messages.average_ratings')}}</th>
                     </tr>
                     </thead>
 
@@ -187,13 +255,16 @@
                         <tr>
                             <td>{{$key+$items->firstItem()}}</td>
                             <td>
-                                <a class="media align-items-center" href="{{route('admin.item.view',[$item['id']])}}">
+                                <a class="media align-items-center" href="{{route('admin.item.view',[$item['id'],'module_id'=>$item['module_id']])}}">
                                     <img class="avatar avatar-lg mr-3" src="{{asset('storage/app/public/product')}}/{{$item['image']}}"
                                             onerror="this.src='{{asset('public/assets/admin/img/160x160/img2.jpg')}}'" alt="{{$item->name}} image">
                                     <div class="media-body">
                                         <h5 class="text-hover-primary mb-0">{{$item['name']}}</h5>
                                     </div>
                                 </a>
+                            </td>
+                            <td>
+                                {{ $item->module->module_name }}
                             </td>
                             <td>
                                 @if($item->store)
@@ -203,14 +274,24 @@
                                 @endif
                             </td>
                             <td>
-                                @if($item->store)
-                                    {{$item->store->zone->name}}
-                                @else
-                                    {{translate('messages.not_found')}}
-                                @endif
+                                {{$item->orders_count}}
                             </td>
                             <td>
-                                {{$item->orders_count}}
+                                {{ \App\CentralLogics\Helpers::format_currency($item->price) }}
+                            </td>
+                            <td>
+                                {{ \App\CentralLogics\Helpers::format_currency($item->orders_sum_price) }}
+                            </td>
+                            <td>
+                                {{ \App\CentralLogics\Helpers::format_currency($item->orders_sum_discount_on_item) }}
+                            </td>
+                            <td>
+                                {{ $item->orders_count>0? \App\CentralLogics\Helpers::format_currency(($item->orders_sum_price-$item->orders_sum_discount_on_item)/$item->orders_count):0 }}
+                            </td>
+                            <td>
+                                <div class="rating">
+                                    <span><i class="tio-star"></i></span>{{ round($item->avg_rating,1) }} ({{ $item->rating_count }})
+                                </div>
                             </td>
                         </tr>
                     @endforeach
@@ -459,6 +540,32 @@
                     }
                 }
             });
+
+            $('#category_id').select2({
+            ajax: {
+                url: '{{ url('/') }}/admin/item/get-categories?parent_id=0',
+                data: function(params) {
+                    return {
+                        q: params.term, // search term
+                        @if(request('module_id'))module_id: {{request('module_id')}}, @endif
+                            page: params.page
+                        };
+                },
+                processResults: function(data) {
+                    return {
+                        results: data
+                    };
+                },
+                __port: function(params, success, failure) {
+                    var $request = $.ajax(params);
+
+                    $request.then(success);
+                    $request.fail(failure);
+
+                    return $request;
+                }
+            }
+        });
         });
     </script>
 
@@ -487,7 +594,7 @@
                 }
             });
             $.post({
-                url: '{{route('admin.report.item-wise-report-search')}}',
+                url: '{{route('admin.transactions.report.item-wise-report-search')}}',
                 data: formData,
                 cache: false,
                 contentType: false,

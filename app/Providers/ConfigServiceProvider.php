@@ -3,9 +3,11 @@
 namespace App\Providers;
 
 use App\Models\BusinessSetting;
+use App\Models\Module;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Request;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 Carbon::setWeekStartsAt(Carbon::MONDAY);
 Carbon::setWeekEndsAt(Carbon::SUNDAY);
@@ -29,7 +31,6 @@ class ConfigServiceProvider extends ServiceProvider
     public function boot()
     {
         $mode = env('APP_MODE');
-
         try {
             $data = BusinessSetting::where(['key' => 'mail_config'])->first();
             $emailServices = json_decode($data['value'], true);
@@ -233,7 +234,7 @@ class ConfigServiceProvider extends ServiceProvider
 
                 Config::set('config_paytm', $config);
             }
-
+      
         } catch (\Exception $ex) {
 
         }

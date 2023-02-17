@@ -30,7 +30,7 @@
                             <button type="submit" class="btn btn--secondary"><i class="tio-search"></i></button>
                             @if (request()->get('search'))
                                 <button type="reset" class="btn btn-info mx-1"
-                                    onclick="location.href = '{{ route('admin.customer.subscribed') }}'">{{ translate('messages.reset') }}</button>
+                                    onclick="location.href = '{{ route('admin.users.customer.subscribed') }}'">{{ translate('messages.reset') }}</button>
                             @endif
                         </div>
                     </form>
@@ -48,13 +48,13 @@
                                                 class="hs-unfold-content dropdown-unfold dropdown-menu dropdown-menu-sm-right">
                                                 <span class="dropdown-header">{{ translate('messages.download') }}
                                                     {{ translate('messages.options') }}</span>
-                                                <a id="export-excel" class="dropdown-item" href="{{route('admin.customer.subscriber-export', ['type'=>'excel'])}}">
+                                                <a id="export-excel" class="dropdown-item" href="{{route('admin.users.customer.subscriber-export', ['type'=>'excel'])}}">
                                                     <img class="avatar avatar-xss avatar-4by3 mr-2"
                                                         src="{{ asset('public/assets/admin') }}/svg/components/excel.svg"
                                                         alt="Image Description">
                                                     {{ translate('messages.excel') }}
                                                 </a>
-                                                <a id="export-csv" class="dropdown-item" href="{{route('admin.customer.subscriber-export', ['type'=>'csv'])}}">
+                                                <a id="export-csv" class="dropdown-item" href="{{route('admin.users.customer.subscriber-export', ['type'=>'csv'])}}">
                                                     <img class="avatar avatar-xss avatar-4by3 mr-2"
                                                         src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                                         alt="Image Description">

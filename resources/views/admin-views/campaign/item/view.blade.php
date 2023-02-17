@@ -120,11 +120,59 @@
                                             </div>
                                         </td>
                                         <td class="px-4">
-                                            @foreach(json_decode($campaign['variations'],true) as $variation)
-                                                <small class="d-block text-capitalize">
-                                                {{$variation['type']}} : {{\App\CentralLogics\Helpers::format_currency($variation['price'])}}
-                                                </small>
+                                            @if ($campaign->module->module_type == 'food')
+                                            @if ($campaign->food_variations && is_array(json_decode($campaign['food_variations'], true)))
+                                                @foreach (json_decode($campaign->food_variations, true) as $variation)
+                                                    @if (isset($variation['price']))
+                                                        <span class="d-block mb-1 text-capitalize">
+                                                            <strong>
+                                                                {{ translate('please_update_the_food_variations.') }}
+                                                            </strong>
+                                                        </span>
+                                                    @break
+    
+                                                @else
+                                                    <span class="d-block text-capitalize">
+                                                        <strong>
+                                                            {{ $variation['name'] }} -
+                                                        </strong>
+                                                        @if ($variation['type'] == 'multi')
+                                                            {{ translate('messages.multiple_select') }}
+                                                        @elseif($variation['type'] == 'single')
+                                                            {{ translate('messages.single_select') }}
+                                                        @endif
+                                                        @if ($variation['required'] == 'on')
+                                                            - ({{ translate('messages.required') }})
+                                                        @endif
+                                                    </span>
+    
+                                                    @if ($variation['min'] != 0 && $variation['max'] != 0)
+                                                        ({{ translate('messages.Min_select') }}: {{ $variation['min'] }} -
+                                                        {{ translate('messages.Max_select') }}: {{ $variation['max'] }})
+                                                    @endif
+    
+                                                    @if (isset($variation['values']))
+                                                        @foreach ($variation['values'] as $value)
+                                                            <span class="d-block text-capitalize">
+                                                                &nbsp; &nbsp; {{ $value['label'] }} :
+                                                                <strong>{{ \App\CentralLogics\Helpers::format_currency($value['optionPrice']) }}</strong>
+                                                            </span>
+                                                        @endforeach
+                                                    @endif
+                                                @endif
                                             @endforeach
+                                            @endif
+                                        @else.
+                                        @if ($campaign->variations && is_array(json_decode($campaign['variations'], true)))
+                                            @foreach (json_decode($campaign['variations'], true) as $variation)
+                                                <span class="d-block mb-1 text-capitalize">
+                                                    {{ $variation['type'] }} :
+                                                    {{ \App\CentralLogics\Helpers::format_currency($variation['price']) }}
+                                                </span>
+                                            @endforeach
+                                        @endif
+                                        @endif
+
                                         </td>
                                         <td class="px-4">
                                             @foreach(\App\Models\AddOn::whereIn('id',json_decode($campaign['add_ons'],true))->get() as $addon)

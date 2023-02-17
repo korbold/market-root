@@ -86,13 +86,13 @@
                             <div class="dropdown-divider"></div> --}}
                             <span class="dropdown-header">{{ translate('messages.download') }}
                                 {{ translate('messages.options') }}</span>
-                            <a id="export-excel" class="dropdown-item" href="{{route('admin.store.withdraw_export', ['type'=>'excel',request()->getQueryString()])}}">
+                            <a id="export-excel" class="dropdown-item" href="{{route('admin.transactions.store.withdraw_export', ['type'=>'excel',request()->getQueryString()])}}">
                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                     src="{{ asset('public/assets/admin') }}/svg/components/excel.svg"
                                     alt="Image Description">
                                 {{ translate('messages.excel') }}
                             </a>
-                            <a id="export-csv" class="dropdown-item" href="{{route('admin.store.withdraw_export', ['type'=>'csv',request()->getQueryString()])}}">
+                            <a id="export-csv" class="dropdown-item" href="{{route('admin.transactions.store.withdraw_export', ['type'=>'csv',request()->getQueryString()])}}">
                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                     src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                     alt="Image Description">
@@ -135,7 +135,7 @@
                                 <td>
                                     @if($wr->vendor)
                                     <a class="deco-none"
-                                        href="{{route('admin.store.view',[$wr->vendor['id']])}}">{{ Str::limit($wr->vendor->stores[0]->name, 20, '...') }}</a>
+                                        href="{{route('admin.store.view',[$wr->vendor['id'],'module_id'=>$wr->vendor->stores[0]->module_id])}}">{{ Str::limit($wr->vendor->stores[0]->name, 20, '...') }}</a>
                                     @else
                                     {{translate('messages.store deleted!') }}
                                     @endif
@@ -152,7 +152,7 @@
                                 </td>
                                 <td>
                                     @if($wr->vendor)
-                                    <a href="{{route('admin.store.withdraw_view',[$wr['id'],$wr->vendor['id']])}}"
+                                    <a href="{{route('admin.transactions.store.withdraw_view',[$wr['id'],$wr->vendor['id']])}}"
                                         class="btn action-btn btn--warning btn-outline-warning"><i class="tio-visible-outlined"></i>
                                     </a>
                                     @else
@@ -199,7 +199,7 @@
                 }
             });
             $.post({
-                url: '{{route('admin.store.status-filter')}}',
+                url: '{{route('admin.transactions.store.status-filter')}}',
                 data: {
                     withdraw_status_filter: type
                 },
@@ -224,7 +224,7 @@
                 }
             });
             $.post({
-                url: '{{route('admin.store.withdraw_search')}}',
+                url: '{{route('admin.transactions.store.withdraw_search')}}',
                 data: formData,
                 cache: false,
                 contentType: false,

@@ -20,7 +20,6 @@ class Zone extends Model
         'status' => 'integer',
         'cash_on_delivery' => 'boolean',
         'digital_payment' => 'boolean',
-        'transfer_payment' => 'boolean',
     ];
 
     public function stores()
@@ -56,6 +55,6 @@ class Zone extends Model
 
     public function modules()
     {
-        return $this->belongsToMany(Module::class)->withPivot(['per_km_shipping_charge','minimum_shipping_charge'])->using('App\Models\ModuleZone');
+        return $this->belongsToMany(Module::class)->withPivot(['per_km_shipping_charge','minimum_shipping_charge','maximum_cod_order_amount'])->using('App\Models\ModuleZone');
     }
 }

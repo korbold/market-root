@@ -10,10 +10,11 @@ use App\Models\Order;
 use App\Scopes\ZoneScope;
 use Illuminate\Http\Request;
 use Brian2694\Toastr\Facades\Toastr;
+use Illuminate\Support\Facades\Config;
 
 class ParcelController extends Controller
 {
-    public function orders(Request $request, $status= 'all')
+    public function orders(Request $request,$status)
     {
         if (session()->has('zone_filter') == false) {
             session()->put('zone_filter', 0);
@@ -25,7 +26,8 @@ class ParcelController extends Controller
         }
 
         $key = isset($request->search)?explode(' ', $request->search):null;
-        
+        $status=$request->status;
+
         Order::withOutGlobalScope(ZoneScope::class)->where(['checked' => 0,'order_type'=>'parcel'])->update(['checked' => 1]);
 
         $orders = Order::withOutGlobalScope(ZoneScope::class)->with(['customer', 'store'])
@@ -56,7 +58,7 @@ class ParcelController extends Controller
         ->when($status == 'processing', function($query){
             return $query->Preparing();
         })
-        ->when($status == 'food_on_the_way', function($query){
+        ->when($status == 'item_on_the_way', function($query){
             return $query->ItemOnTheWay();
         })
         ->when($status == 'delivered', function($query){
@@ -98,6 +100,7 @@ class ParcelController extends Controller
             return $query->whereBetween('created_at', [$request->from_date." 00:00:00",$request->to_date." 23:59:59"]);
         })
         ->ParcelOrder()
+        ->module(Config::get('module.current_module_id'))
         ->orderBy('schedule_at', 'desc')
         ->paginate(config('default_pagination'));
         $orderstatus = isset($request->orderStatus)?$request->orderStatus:[];
@@ -164,5 +167,108 @@ class ParcelController extends Controller
 
         Toastr::success(translate('messages.parcel_settings_updated'));
         return back();
+    }
+
+    public function dispatch_list($status, Request $request)
+    {
+        $module_id = $request->query('module_id', null);
+
+        if (session()->has('order_filter')) {
+            $request = json_decode(session('order_filter'));
+            $zone_ids = isset($request->zone) ? $request->zone : 0;
+        }
+
+        Order::where(['checked' => 0])->update(['checked' => 1]);
+
+        $orders = Order::with(['customer', 'store'])
+            ->when(isset($module_id), function ($query) use ($module_id) {
+                return $query->module($module_id);
+            })
+            ->when(isset($request->zone), function ($query) use ($request) {
+                return $query->whereHas('store', function ($query) use ($request) {
+                    return $query->whereIn('zone_id', $request->zone);
+                });
+            })
+            ->when($status == 'searching_for_deliverymen', function ($query) {
+                return $query->SearchingForDeliveryman();
+            })
+            ->when($status == 'on_going', function ($query) {
+                return $query->Ongoing();
+            })
+            ->when(isset($request->vendor), function ($query) use ($request) {
+                return $query->whereHas('store', function ($query) use ($request) {
+                    return $query->whereIn('id', $request->vendor);
+                });
+            })
+            ->when(isset($request->from_date) && isset($request->to_date) && $request->from_date != null && $request->to_date != null, function ($query) use ($request) {
+                return $query->whereBetween('created_at', [$request->from_date . " 00:00:00", $request->to_date . " 23:59:59"]);
+            })
+            ->ParcelOrder()
+            ->module(Config::get('module.current_module_id'))
+            ->OrderScheduledIn(30)
+            ->orderBy('schedule_at', 'desc')
+            ->paginate(config('default_pagination'));
+
+        $orderstatus = isset($request->orderStatus) ? $request->orderStatus : [];
+        $scheduled = isset($request->scheduled) ? $request->scheduled : 0;
+        $vendor_ids = isset($request->vendor) ? $request->vendor : [];
+        $zone_ids = isset($request->zone) ? $request->zone : [];
+        $from_date = isset($request->from_date) ? $request->from_date : null;
+        $to_date = isset($request->to_date) ? $request->to_date : null;
+        $total = $orders->total();
+
+        return view('admin-views.order.distaptch_list', compact('orders', 'status', 'orderstatus', 'scheduled', 'vendor_ids', 'zone_ids', 'from_date', 'to_date', 'total'));
+    }
+    public function parcel_dispatch_list($module,$status, Request $request)
+    {
+        $module_id = $request->query('module_id', null);
+
+        if (session()->has('order_filter')) {
+            $request = json_decode(session('order_filter'));
+            $zone_ids = isset($request->zone) ? $request->zone : 0;
+        }
+
+        Order::where(['checked' => 0])->update(['checked' => 1]);
+
+        $orders = Order::with(['customer', 'store'])
+            ->whereHas('module', function($query) use($module){
+                $query->where('id', $module);
+            })
+            ->when(isset($module_id), function ($query) use ($module_id) {
+                return $query->module($module_id);
+            })
+            ->when(isset($request->zone), function ($query) use ($request) {
+                return $query->whereHas('store', function ($query) use ($request) {
+                    return $query->whereIn('zone_id', $request->zone);
+                });
+            })
+            ->when($status == 'searching_for_deliverymen', function ($query) {
+                return $query->SearchingForDeliveryman();
+            })
+            ->when($status == 'on_going', function ($query) {
+                return $query->Ongoing();
+            })
+            ->when(isset($request->vendor), function ($query) use ($request) {
+                return $query->whereHas('store', function ($query) use ($request) {
+                    return $query->whereIn('id', $request->vendor);
+                });
+            })
+            ->when(isset($request->from_date) && isset($request->to_date) && $request->from_date != null && $request->to_date != null, function ($query) use ($request) {
+                return $query->whereBetween('created_at', [$request->from_date . " 00:00:00", $request->to_date . " 23:59:59"]);
+            })
+            ->ParcelOrder()
+            ->OrderScheduledIn(30)
+            ->orderBy('schedule_at', 'desc')
+            ->paginate(config('default_pagination'));
+
+        $orderstatus = isset($request->orderStatus) ? $request->orderStatus : [];
+        $scheduled = isset($request->scheduled) ? $request->scheduled : 0;
+        $vendor_ids = isset($request->vendor) ? $request->vendor : [];
+        $zone_ids = isset($request->zone) ? $request->zone : [];
+        $from_date = isset($request->from_date) ? $request->from_date : null;
+        $to_date = isset($request->to_date) ? $request->to_date : null;
+        $total = $orders->total();
+
+        return view('admin-views.order.distaptch_list', compact('orders','module', 'status', 'orderstatus', 'scheduled', 'vendor_ids', 'zone_ids', 'from_date', 'to_date', 'total'));
     }
 }

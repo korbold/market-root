@@ -58,7 +58,7 @@ class ModuleController extends Controller
         $module->module_type= $request->module_type;
         $module->theme_id= $request->theme??1;
         $module->description= $request->description[array_search('en', $request->lang)];
-        $module->all_zone_service = $request->all_zone_service??false;
+        // $module->all_zone_service = $request->all_zone_service??false;
         $module->save();
 
         $data = [];
@@ -102,7 +102,7 @@ class ModuleController extends Controller
     public function show($id)
     {
         $module = Module::findOrFail($id);
-        return response()->json(['data'=>config('module.'.$module->module_type)]);
+        return response()->json(['data'=>config('module.'.$module->module_type),'type'=>$module->module_type]);
     }
 
     /**
@@ -151,7 +151,7 @@ class ModuleController extends Controller
         $module->thumbnail = $request->has('thumbnail') ? Helpers::update('module/', $module->thumbnail, 'png', $request->file('thumbnail')) : $module->thumbnail;
         $module->theme_id= $request->theme??1;
         $module->description =  $request->description[array_search('en', $request->lang)];
-        $module->all_zone_service = $request->all_zone_service ?? false;
+        $module->all_zone_service = false;
         $module->save();
         foreach($request->lang as $index=>$key)
         {

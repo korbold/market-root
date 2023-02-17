@@ -18,10 +18,10 @@
                 <div class="card h-100">
                     <div class="card-header border-0">
                         <div class="input-group input---group">
-                            <div class="input-group-prepend border-right-0">
-                                <span class="input-group-text border-right-0" id="basic-addon1"><i class="tio-search"></i></span>
+                            <div class="input-group-prepend border-inline-end-0">
+                                <span class="input-group-text border-inline-end-0" id="basic-addon1"><i class="tio-search"></i></span>
                             </div>
-                            <input type="text" class="form-control border-left-0 pl-1" id="serach" placeholder="{{ translate('messages.search') }}" aria-label="Username"
+                            <input type="text" class="form-control border-inline-start-0 pl-1" id="serach" placeholder="{{ translate('messages.search') }}" aria-label="Username"
                                 aria-describedby="basic-addon1" autocomplete="off">
                         </div>
                     </div>

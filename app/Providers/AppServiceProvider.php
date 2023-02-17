@@ -3,7 +3,6 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\URL;
 use Illuminate\Pagination\Paginator;
 use App\CentralLogics\Helpers;
 
@@ -26,12 +25,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-
+        
         try
         {
-            if(config('app.env') !== 'local') {
-                URL::forceScheme('https');
-            }
             Paginator::useBootstrap();
             foreach(Helpers::get_view_keys() as $key=>$value)
             {
@@ -42,6 +38,6 @@ class AppServiceProvider extends ServiceProvider
         {
 
         }
-
+        
     }
 }

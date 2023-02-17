@@ -28,9 +28,6 @@ class ZoneController extends Controller
         $request->validate([
             'name' => 'required|unique:zones|max:191',
             'coordinates' => 'required',
-            'cash_on_delivery' => 'required_without:digital_payment',
-            'digital_payment' => 'required_without:cash_on_delivery',
-            'transfer_payment' => 'required_without:transfer_payment',
         ]);
 
         $value = $request->coordinates;
@@ -52,7 +49,6 @@ class ZoneController extends Controller
         $zone->deliveryman_wise_topic = 'zone_'.$zone_id.'_delivery_man';
         $zone->cash_on_delivery = $request->cash_on_delivery?1:0;
         $zone->digital_payment = $request->digital_payment?1:0;
-        $zone->transfer_payment = $request->transfer_payment?1:0;
         $zone->save();
 
         Toastr::success(translate('messages.zone_added_successfully'));
@@ -79,11 +75,17 @@ class ZoneController extends Controller
 
     public function module_update(Request $request, $id)
     {
+        $request->validate([
+            'cash_on_delivery' => 'required_without:digital_payment',
+            'digital_payment' => 'required_without:cash_on_delivery',
+        ]);
         $zone=Zone::findOrFail($id);
+        $zone->cash_on_delivery = $request->cash_on_delivery?1:0;
+        $zone->digital_payment = $request->digital_payment?1:0;
         $zone->modules()->sync($request->module_data);
         $zone->save();
         Toastr::success(translate('messages.zone_module_updated_successfully'));
-        return redirect()->route('admin.zone.home');
+        return redirect()->route('admin.business-settings.zone.home');
     }
 
     public function update(Request $request, $id)
@@ -110,10 +112,9 @@ class ZoneController extends Controller
         $zone->deliveryman_wise_topic = 'zone_'.$id.'_delivery_man';
         $zone->cash_on_delivery = $request->cash_on_delivery?1:0;
         $zone->digital_payment = $request->digital_payment?1:0;
-        $zone->transfer_payment = $request->transfer_payment?1:0;
         $zone->save();
         Toastr::success(translate('messages.zone_updated_successfully'));
-        return redirect()->route('admin.zone.home');
+        return redirect()->route('admin.business-settings.zone.home');
     }
 
     public function destroy(Zone $zone)
@@ -139,6 +140,24 @@ class ZoneController extends Controller
         $zone->status = $request->status;
         $zone->save();
         Toastr::success(translate('messages.zone_status_updated'));
+        return back();
+    }
+
+    public function digital_payment(Request $request)
+    {
+        $zone = Zone::findOrFail($request->id);
+        $zone->digital_payment = $request->digital_payment;
+        $zone->save();
+        Toastr::success(translate('messages.zone_digital_payment_status_updated'));
+        return back();
+    }
+
+    public function cash_on_delivery(Request $request)
+    {
+        $zone = Zone::findOrFail($request->id);
+        $zone->cash_on_delivery = $request->cash_on_delivery;
+        $zone->save();
+        Toastr::success(translate('messages.zone_cash_on_delivery_status_updated'));
         return back();
     }
 

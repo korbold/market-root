@@ -134,7 +134,7 @@
                 </td>
 
                 <td>
-                    <div style="text-align: right; margin-right:15px;">
+                    <div style="text-align: end; margin-inline-end:15px;">
                         <img style="max-width:250px;border:0;" src="{{asset('/storage/app/public/business/'.$logo)}}" title=""
                             class="sitelogo" width="60%"  alt=""/>
                     </div>
@@ -159,7 +159,7 @@
             <tr style="width: 100%;">
                 <td style="width:50%;vertical-align: top; margin-top:5px;">
 
-                    <div style="text-align:left;margin-top:10px;">
+                    <div style="text-align:start;margin-top:10px;">
                       <span style="color: #130505 !important;text-transform: capitalize;font-weight: bold;">{{translate('messages.restaurant')}} {{translate('messages.info')}} </span><br>
 
                       @if ($order->restaurant)
@@ -169,14 +169,14 @@
                             <img style="border:0;border-radius:50%;" src="{{asset('/storage/app/public/restaurant/'.$order->restaurant->logo)}}" title=""
                                     class="sitelogo" width="20%"  alt=""/>
 
-                            <span style="padding-left: 5px;">{{$order->restaurant->name}}</span>
+                            <span style="padding-inline-start: 5px;">{{$order->restaurant->name}}</span>
                         </div>
                     @endif
                   </div>
 
                 </td>
                 <td style="width:50%;vertical-align: top;">
-                    <div style="text-align:right;margin-top:10px;">
+                    <div style="text-align:end;margin-top:10px;">
                         <span style="color: #130505 !important;text-transform: capitalize;font-weight: bold;">{{translate('messages.payment_details')}}  </span><br>
                         <div style="margin-top: 10px;">
                           <span style="color: #414141 !important ; text-transform: capitalize;">{{ str_replace('_',' ',$order->payment_method) }}</span><br>
@@ -266,12 +266,12 @@
 
         <table style="background-color: rgb(255, 255, 255);width: 90%;margin:auto;margin-top:30px;">
             <tr>
-                <th style="text-align: left; vertical-align: auto;">
+                <th style="text-align: start; vertical-align: auto;">
 
                 </th>
 
-                <td style="text-align: right">
-                    <table style="width: 46%;margin-left:41%; display: inline;text-transform: capitalize; ">
+                <td style="text-align: end">
+                    <table style="width: 46%;margin-inline-start:41%; display: inline;text-transform: capitalize; ">
                         <tbody>
 
                         <tr>
@@ -349,7 +349,7 @@
             </tr>
             <tr>
                 <th >
-                    <div style="font-weight: 400;font-size: 11px;line-height: 22px;color: #242A30;"><span style="margin-right:5px;"> <a href="tel:{{$company_phone}}" style="text-decoration: none; color: inherit;">{{translate('messages.phone')}}: {{$company_phone}}</a></span> <span><a href="mailto:{{$company_email}}" style="text-decoration: none; color: inherit;">{{translate('messages.email')}}: {{$company_email}}</a></span></div>
+                    <div style="font-weight: 400;font-size: 11px;line-height: 22px;color: #242A30;"><span style="margin-inline-end:5px;"> <a href="tel:{{$company_phone}}" style="text-decoration: none; color: inherit;">{{translate('messages.phone')}}: {{$company_phone}}</a></span> <span><a href="mailto:{{$company_email}}" style="text-decoration: none; color: inherit;">{{translate('messages.email')}}: {{$company_email}}</a></span></div>
                     @if ($company_links['web_app_url_status'])
                     <div style="font-weight: 400;font-size: 11px;line-height: 22px;color: #242A30;">
                         <a href="{{$company_links['web_app_url']}}" style="text-decoration: none; color: inherit;">{{$company_links['web_app_url']}}</a></div>

@@ -6,9 +6,12 @@
 <tr>
     <td>{{$k+1}}</td>
     <td>
-        <a href="{{route('admin.store.view', $store->id)}}">{{ $store->name }}</a>
+        <a href="{{route('admin.store.view', [$store->id, 'module_id'=>$store->module_id])}}">{{ $store->name }}</a>
     </td>
-    <td>
+    <td class="text-center">
+        {{ $store->orders->count() }}
+    </td>
+    <td class="text-center">
         {{ $delivered }}
     </td>
     <td class="text-center">
@@ -28,7 +31,7 @@
     </td>
     <td>
         <div class="btn--container justify-content-center">
-            <a href="{{route('admin.store.view', $store->id)}}" class="action-btn btn--primary btn-outline-primary">
+            <a href="{{route('admin.store.view', [$store->id, 'module_id'=>$store->module_id])}}" class="action-btn btn--primary btn-outline-primary">
                 <i class="tio-invisible"></i>
             </a>
         </div>

@@ -27,6 +27,7 @@ use App\Http\Controllers\Controller;
 use Brian2694\Toastr\Facades\Toastr;
 use Rap2hpoutre\FastExcel\FastExcel;
 use Grimzy\LaravelMysqlSpatial\Types\Point;
+use Illuminate\Support\Facades\Config;
 
 class OrderController extends Controller
 {
@@ -111,6 +112,7 @@ class OrderController extends Controller
                 return $query->whereBetween('created_at', [$request->from_date . " 00:00:00", $request->to_date . " 23:59:59"]);
             })
             ->StoreOrder()
+            ->module(Config::get('module.current_module_id'))
             ->orderBy('schedule_at', 'desc')
             ->paginate(config('default_pagination'));
         $orderstatus = isset($request->orderStatus) ? $request->orderStatus : [];
@@ -126,7 +128,7 @@ class OrderController extends Controller
         return view('admin-views.order.list', compact('orders', 'status', 'orderstatus', 'scheduled', 'vendor_ids', 'zone_ids', 'from_date', 'to_date', 'total', 'order_type'));
     }
 
-    public function dispatch_list($status, Request $request)
+    public function dispatch_list($module,$status, Request $request)
     {
         $module_id = $request->query('module_id', null);
 
@@ -138,6 +140,9 @@ class OrderController extends Controller
         Order::where(['checked' => 0])->update(['checked' => 1]);
 
         $orders = Order::with(['customer', 'store'])
+            ->whereHas('module', function($query) use($module){
+                $query->where('id', $module);
+            })
             ->when(isset($module_id), function ($query) use ($module_id) {
                 return $query->module($module_id);
             })
@@ -173,7 +178,7 @@ class OrderController extends Controller
         $to_date = isset($request->to_date) ? $request->to_date : null;
         $total = $orders->total();
 
-        return view('admin-views.order.distaptch_list', compact('orders', 'status', 'orderstatus', 'scheduled', 'vendor_ids', 'zone_ids', 'from_date', 'to_date', 'total'));
+        return view('admin-views.order.distaptch_list', compact('orders','module', 'status', 'orderstatus', 'scheduled', 'vendor_ids', 'zone_ids', 'from_date', 'to_date', 'total'));
     }
 
     public function details(Request $request, $id)
@@ -188,7 +193,62 @@ class OrderController extends Controller
             return $query->withoutGlobalScope(StoreScope::class);
         }, 'details.campaign' => function ($query) {
             return $query->withoutGlobalScope(StoreScope::class);
-        }])->where(['id' => $id])->StoreOrder()->first();
+        }])->where(['id' => $id])->first();
+        if (isset($order)) {
+            if (isset($order->store)) {
+                $deliveryMen = DeliveryMan::where('zone_id', $order->store->zone_id)->available()->active()->get();
+            } else {
+                $deliveryMen = isset($order->zone_id) ? DeliveryMan::where('zone_id', $order->zone_id)->zonewise()->available()->active()->get() : [];
+            }
+            $category = $request->query('category_id', 0);
+            // $sub_category = $request->query('sub_category', 0);
+            $categories = Category::active()->get();
+            $keyword = $request->query('keyword', false);
+            $key = explode(' ', $keyword);
+            $products = Item::withoutGlobalScope(StoreScope::class)->where('store_id', $order->store_id)
+                ->when($category, function ($query) use ($category) {
+                    $query->whereHas('category', function ($q) use ($category) {
+                        return $q->whereId($category)->orWhere('parent_id', $category);
+                    });
+                })
+                ->when($keyword, function ($query) use ($key) {
+                    return $query->where(function ($q) use ($key) {
+                        foreach ($key as $value) {
+                            $q->orWhere('name', 'like', "%{$value}%");
+                        }
+                    });
+                })
+                ->latest()->paginate(10);
+            $editing = false;
+            if ($request->session()->has('order_cart')) {
+                $cart = session()->get('order_cart');
+                if (count($cart) > 0 && $cart[0]->order_id == $order->id) {
+                    $editing = true;
+                } else {
+                    session()->forget('order_cart');
+                }
+            }
+
+            $deliveryMen = Helpers::deliverymen_list_formatting($deliveryMen);
+            return view('admin-views.order.order-view', compact('order', 'deliveryMen', 'categories', 'products', 'category', 'keyword', 'editing'));
+        } else {
+            Toastr::info(translate('messages.no_more_orders'));
+            return back();
+        }
+    }
+    public function all_details(Request $request, $id)
+    {
+        $order = Order::with(['details', 'refund', 'store' => function ($query) {
+            return $query->withCount('orders');
+        }, 'customer' => function ($query) {
+            return $query->withCount('orders');
+        }, 'delivery_man' => function ($query) {
+            return $query->withCount('orders');
+        }, 'details.item' => function ($query) {
+            return $query->withoutGlobalScope(StoreScope::class);
+        }, 'details.campaign' => function ($query) {
+            return $query->withoutGlobalScope(StoreScope::class);
+        }])->where(['id' => $id])->first();
         if (isset($order)) {
             if (isset($order->store)) {
                 $deliveryMen = DeliveryMan::where('zone_id', $order->store->zone_id)->available()->active()->get();
@@ -236,6 +296,7 @@ class OrderController extends Controller
     {
         $key = explode(' ', $request['search']);
         $parcel_order = $request->parcel_order ?? false;
+        $module_section_type = $request->module_section_type ?? false;
         $orders = Order::where(function ($q) use ($key) {
             foreach ($key as $value) {
                 $q->orWhere('id', 'like', "%{$value}%")
@@ -243,6 +304,9 @@ class OrderController extends Controller
                     ->orWhere('transaction_reference', 'like', "%{$value}%");
             }
         });
+        if ($module_section_type) {
+            $orders = $orders->module($module_section_type);
+        }
         if ($parcel_order) {
             $orders = $orders->withOutGlobalScope(ZoneScope::class)->ParcelOrder();
         } else {
@@ -451,7 +515,8 @@ class OrderController extends Controller
             $deliveryman->save();
             $deliveryman->increment('assigned_order_count');
             $fcm_token = $order->customer->cm_firebase_token;
-            $value = Helpers::order_status_update_message('accepted');
+            $value = Helpers::order_status_update_message('accepted',$order->module->module_type,$order->customer?
+            $order->customer->current_language_key:'en');
             try {
                 if ($value) {
                     $data = [
@@ -592,93 +657,173 @@ class OrderController extends Controller
             $product = ItemCampaign::find($request->id);
         }
 
-        $data = new OrderDetail();
-        if ($request->order_details_id) {
-            $data['id'] = $request->order_details_id;
-        }
-
-        $data['item_id'] = $request->item_type == 'item' ? $product->id : null;
-        $data['item_campaign_id'] = $request->item_type == 'campaign' ? $product->id : null;
-        $data['order_id'] = $request->order_id;
-        $str = '';
-        $price = 0;
-        $addon_price = 0;
-
-        //Gets all the choice values of customer choice option and generate a string like Black-S-Cotton
-        foreach (json_decode($product->choice_options) as $key => $choice) {
-            if ($str != null) {
-                $str .= '-' . str_replace(' ', '', $request[$choice->name]);
-            } else {
-                $str .= str_replace(' ', '', $request[$choice->name]);
+        if (isset($product->module_id) && $product->module->module_type == 'food' && $product->food_variations) {
+            $data = new OrderDetail();
+            if ($request->order_details_id) {
+                $data['id'] = $request->order_details_id;
             }
-        }
-        $data['variant'] = json_encode([]);
-        $data['variation'] = json_encode([]);
-        if ($request->session()->has('order_cart') && !isset($request->cart_item_key)) {
-            if (count($request->session()->get('order_cart')) > 0) {
-                foreach ($request->session()->get('order_cart') as $key => $cartItem) {
-                    if ($cartItem['item_id'] == $request['id'] && $cartItem['status'] == true) {
-                        if (count(json_decode($cartItem['variation'], true)) > 0) {
-                            if (json_decode($cartItem['variation'], true)[0]['type'] == $str) {
+
+            $data['item_id'] = $request->item_type == 'item' ? $product->id : null;
+            $data['item_campaign_id'] = $request->item_type == 'campaign' ? $product->id : null;
+            $data['item'] = $request->item_type == 'item' ? $product : null;
+            $data['item_campaign'] = $request->item_type == 'campaign' ? $product : null;
+            $data['order_id'] = $request->order_id;
+            $variations = [];
+            $price = 0;
+            $addon_price = 0;
+            $variation_price = 0;
+
+            $product_variations = json_decode($product->food_variations, true);
+            if ($request->variations && count($product_variations)) {
+                foreach ($request->variations  as $key => $value) {
+
+                    if ($value['required'] == 'on' &&  isset($value['values']) == false) {
+                        return response()->json([
+                            'data' => 'variation_error',
+                            'message' => translate('Please select items from') . ' ' . $value['name'],
+                        ]);
+                    }
+                    if (isset($value['values'])  && $value['min'] != 0 && $value['min'] > count($value['values']['label'])) {
+                        return response()->json([
+                            'data' => 'variation_error',
+                            'message' => translate('Please select minimum ') . $value['min'] . translate(' For ') . $value['name'] . '.',
+                        ]);
+                    }
+                    if (isset($value['values']) && $value['max'] != 0 && $value['max'] < count($value['values']['label'])) {
+                        return response()->json([
+                            'data' => 'variation_error',
+                            'message' => translate('Please select maximum ') . $value['max'] . translate(' For ') . $value['name'] . '.',
+                        ]);
+                    }
+                }
+                $variation_data = Helpers::get_varient($product_variations, $request->variations);
+                $variation_price = $variation_data['price'];
+                $variations = $variation_data['variations'];
+            }
+            $price = $product->price + $variation_price;
+            $data['variation'] = json_encode($variations);
+            $data['variant'] = '';
+            // $data['variation_price'] = $variation_price;
+            $data['quantity'] = $request['quantity'];
+            $data['price'] = $price;
+            $data['status'] = true;
+            $data['discount_on_item'] = Helpers::product_discount_calculate($product, $price, $product->store);
+            $data["discount_type"] = "discount_on_product";
+            $data["tax_amount"] = Helpers::tax_calculate($product, $price);
+            $add_ons = [];
+            $add_on_qtys = [];
+
+            if ($request['addon_id']) {
+                foreach ($request['addon_id'] as $id) {
+                    $addon_price += $request['addon-price' . $id] * $request['addon-quantity' . $id];
+                    $add_on_qtys[] = $request['addon-quantity' . $id];
+                }
+                $add_ons = $request['addon_id'];
+            }
+
+            $addon_data = Helpers::calculate_addon_price(\App\Models\AddOn::withOutGlobalScope(StoreScope::class)->whereIn('id', $add_ons)->get(), $add_on_qtys);
+            $data['add_ons'] = json_encode($addon_data['addons']);
+            $data['total_add_on_price'] = $addon_data['total_add_on_price'];
+            $cart = $request->session()->get('order_cart', collect([]));
+
+            if (isset($request->cart_item_key)) {
+                $cart[$request->cart_item_key] = $data;
+                return response()->json([
+                    'data' => 2
+                ]);
+            } else {
+                $cart->push($data);
+            }
+        } else {
+
+            $data = new OrderDetail();
+            if ($request->order_details_id) {
+                $data['id'] = $request->order_details_id;
+            }
+
+            $data['item_id'] = $request->item_type == 'item' ? $product->id : null;
+            $data['item_campaign_id'] = $request->item_type == 'campaign' ? $product->id : null;
+            $data['order_id'] = $request->order_id;
+            $str = '';
+            $price = 0;
+            $addon_price = 0;
+
+            //Gets all the choice values of customer choice option and generate a string like Black-S-Cotton
+            foreach (json_decode($product->choice_options) as $key => $choice) {
+                if ($str != null) {
+                    $str .= '-' . str_replace(' ', '', $request[$choice->name]);
+                } else {
+                    $str .= str_replace(' ', '', $request[$choice->name]);
+                }
+            }
+            $data['variant'] = json_encode([]);
+            $data['variation'] = json_encode([]);
+            if ($request->session()->has('order_cart') && !isset($request->cart_item_key)) {
+                if (count($request->session()->get('order_cart')) > 0) {
+                    foreach ($request->session()->get('order_cart') as $key => $cartItem) {
+                        // dd($cartItem);
+                        if ($cartItem && $cartItem['item_id'] == $request['id'] && $cartItem['status'] == true) {
+                            if (count(json_decode($cartItem['variation'], true)) > 0) {
+                                if (json_decode($cartItem['variation'], true)[0]['type'] == $str) {
+                                    return response()->json([
+                                        'data' => 1
+                                    ]);
+                                }
+                            } else {
                                 return response()->json([
                                     'data' => 1
                                 ]);
                             }
-                        } else {
-                            return response()->json([
-                                'data' => 1
-                            ]);
                         }
                     }
                 }
             }
-        }
-        //Check the string and decreases quantity for the stock
-        if ($str != null) {
-            $count = count(json_decode($product->variations));
-            for ($i = 0; $i < $count; $i++) {
-                if (json_decode($product->variations)[$i]->type == $str) {
-                    $vr = json_decode($product->variations);
-                    $price = $vr[$i]->price;
-                    $stock = isset($vr[$i]->stock) ? $vr[$i]->stock : 0;
+            //Check the string and decreases quantity for the stock
+            if ($str != null) {
+                $count = count(json_decode($product->variations));
+                for ($i = 0; $i < $count; $i++) {
+                    if (json_decode($product->variations)[$i]->type == $str) {
+                        $vr = json_decode($product->variations);
+                        $price = $vr[$i]->price;
+                        $stock = isset($vr[$i]->stock) ? $vr[$i]->stock : 0;
+                    }
                 }
+                $data['variation'] = json_encode([["type" => $str, "price" => $price, "stock" => $stock]]);
+            } else {
+                $price = $product->price;
             }
-            $data['variation'] = json_encode([["type" => $str, "price" => $price, "stock" => $stock]]);
-        } else {
-            $price = $product->price;
-        }
 
-        $data['quantity'] = $request['quantity'];
-        $data['price'] = $price;
-        $data['status'] = true;
-        $data['discount_on_item'] = Helpers::product_discount_calculate($product, $price, $product->store);
-        $data["discount_type"] = "discount_on_product";
-        $data["tax_amount"] = Helpers::tax_calculate($product, $price);
-        $add_ons = [];
-        $add_on_qtys = [];
+            $data['quantity'] = $request['quantity'];
+            $data['price'] = $price;
+            $data['status'] = true;
+            $data['discount_on_item'] = Helpers::product_discount_calculate($product, $price, $product->store);
+            $data["discount_type"] = "discount_on_product";
+            $data["tax_amount"] = Helpers::tax_calculate($product, $price);
+            $add_ons = [];
+            $add_on_qtys = [];
 
-        if ($request['addon_id']) {
-            foreach ($request['addon_id'] as $id) {
-                $addon_price += $request['addon-price' . $id] * $request['addon-quantity' . $id];
-                $add_on_qtys[] = $request['addon-quantity' . $id];
+            if ($request['addon_id']) {
+                foreach ($request['addon_id'] as $id) {
+                    $addon_price += $request['addon-price' . $id] * $request['addon-quantity' . $id];
+                    $add_on_qtys[] = $request['addon-quantity' . $id];
+                }
+                $add_ons = $request['addon_id'];
             }
-            $add_ons = $request['addon_id'];
-        }
 
-        $addon_data = Helpers::calculate_addon_price(\App\Models\AddOn::whereIn('id', $add_ons)->get(), $add_on_qtys);
-        $data['add_ons'] = json_encode($addon_data['addons']);
-        $data['total_add_on_price'] = $addon_data['total_add_on_price'];
-        // dd($data);
-        $cart = $request->session()->get('order_cart', collect([]));
-        if (isset($request->cart_item_key)) {
-            $cart[$request->cart_item_key] = $data;
-            return response()->json([
-                'data' => 2
-            ]);
-        } else {
-            $cart->push($data);
+            $addon_data = Helpers::calculate_addon_price(\App\Models\AddOn::withoutGlobalScope(StoreScope::class)->whereIn('id', $add_ons)->get(), $add_on_qtys);
+            $data['add_ons'] = json_encode($addon_data['addons']);
+            $data['total_add_on_price'] = $addon_data['total_add_on_price'];
+            // dd($data);
+            $cart = $request->session()->get('order_cart', collect([]));
+            if (isset($request->cart_item_key)) {
+                $cart[$request->cart_item_key] = $data;
+                return response()->json([
+                    'data' => 2
+                ]);
+            } else {
+                $cart->push($data);
+            }
         }
-
         return response()->json([
             'data' => 0
         ]);
@@ -755,89 +900,94 @@ class OrderController extends Controller
             $coupon = Coupon::where(['code' => $order->coupon_code])->first();
         }
         foreach ($cart as $c) {
-            if ($c['status'] == true) {
-                unset($c['status']);
-                if ($c['item_campaign_id'] != null) {
-                    $product = ItemCampaign::find($c['item_campaign_id']);
-                    if ($product) {
-
-                        $price = $c['price'];
-
-                        $product = Helpers::product_data_formatting($product);
-
-                        $c->item_details = json_encode($product);
-                        $c->updated_at = now();
-                        if (isset($c->id)) {
-                            OrderDetail::where('id', $c->id)->update(
-                                [
-                                    'item_id' => $c->item_id,
-                                    'item_campaign_id' => $c->item_campaign_id,
-                                    'item_details' => $c->item_details,
-                                    'quantity' => $c->quantity,
-                                    'price' => $c->price,
-                                    'tax_amount' => $c->tax_amount,
-                                    'discount_on_item' => $c->discount_on_item,
-                                    'discount_type' => $c->discount_type,
-                                    'variant' => $c->variant,
-                                    'variation' => $c->variation,
-                                    'add_ons' => $c->add_ons,
-                                    'total_add_on_price' => $c->total_add_on_price,
-                                    'updated_at' => $c->updated_at
-                                ]
-                            );
+            try {
+                if ($c['status'] == true) {
+                    unset($c['status']);
+                    if ($c['item_campaign_id'] != null) {
+                        $product = ItemCampaign::find($c['item_campaign_id']);
+                        if ($product) {
+    
+                            $price = $c['price'];
+    
+                            $product = Helpers::product_data_formatting($product);
+    
+                            $c->item_details = json_encode($product);
+                            $c->updated_at = now();
+                            if (isset($c->id)) {
+                                OrderDetail::where('id', $c->id)->update(
+                                    [
+                                        'item_id' => $c->item_id,
+                                        'item_campaign_id' => $c->item_campaign_id,
+                                        'item_details' => $c->item_details,
+                                        'quantity' => $c->quantity,
+                                        'price' => $c->price,
+                                        'tax_amount' => $c->tax_amount,
+                                        'discount_on_item' => $c->discount_on_item,
+                                        'discount_type' => $c->discount_type,
+                                        'variant' => $c->variant,
+                                        'variation' => $c->variation,
+                                        'add_ons' => $c->add_ons,
+                                        'total_add_on_price' => $c->total_add_on_price,
+                                        'updated_at' => $c->updated_at
+                                    ]
+                                );
+                            } else {
+                                $c->save();
+                            }
+    
+                            $total_addon_price += $c['total_add_on_price'];
+                            $product_price += $price * $c['quantity'];
+                            $store_discount_amount += $c['discount_on_item'] * $c['quantity'];
                         } else {
-                            $c->save();
+                            Toastr::error(translate('messages.item_not_found'));
+                            return back();
                         }
-
-                        $total_addon_price += $c['total_add_on_price'];
-                        $product_price += $price * $c['quantity'];
-                        $store_discount_amount += $c['discount_on_item'] * $c['quantity'];
                     } else {
-                        Toastr::error(translate('messages.item_not_found'));
-                        return back();
+                        unset($c['item']);
+                        unset($c['item_campaign']);
+                        $product = Item::find($c['item_id']);
+                        if ($product) {
+                            $price = $c['price'];
+    
+                            $product = Helpers::product_data_formatting($product);
+    
+                            $c->item_details = json_encode($product);
+                            $c->updated_at = now();
+                            if (isset($c->id)) {
+                                OrderDetail::where('id', $c->id)->update(
+                                    [
+                                        'item_id' => $c->item_id,
+                                        'item_campaign_id' => $c->item_campaign_id,
+                                        'item_details' => $c->item_details,
+                                        'quantity' => $c->quantity,
+                                        'price' => $c->price,
+                                        'tax_amount' => $c->tax_amount,
+                                        'discount_on_item' => $c->discount_on_item,
+                                        'discount_type' => $c->discount_type,
+                                        'variant' => $c->variant,
+                                        'variation' => $c->variation,
+                                        'add_ons' => $c->add_ons,
+                                        'total_add_on_price' => $c->total_add_on_price,
+                                        'updated_at' => $c->updated_at
+                                    ]
+                                );
+                            } else {
+                                $c->save();
+                            }
+    
+                            $total_addon_price += $c['total_add_on_price'];
+                            $product_price += $price * $c['quantity'];
+                            $store_discount_amount += $c['discount_on_item'] * $c['quantity'];
+                        } else {
+                            Toastr::error(translate('messages.item_not_found'));
+                            return back();
+                        }
                     }
                 } else {
-                    $product = Item::find($c['item_id']);
-                    if ($product) {
-
-                        $price = $c['price'];
-
-                        $product = Helpers::product_data_formatting($product);
-
-                        $c->item_details = json_encode($product);
-                        $c->updated_at = now();
-                        if (isset($c->id)) {
-                            OrderDetail::where('id', $c->id)->update(
-                                [
-                                    'item_id' => $c->item_id,
-                                    'item_campaign_id' => $c->item_campaign_id,
-                                    'item_details' => $c->item_details,
-                                    'quantity' => $c->quantity,
-                                    'price' => $c->price,
-                                    'tax_amount' => $c->tax_amount,
-                                    'discount_on_item' => $c->discount_on_item,
-                                    'discount_type' => $c->discount_type,
-                                    'variant' => $c->variant,
-                                    'variation' => $c->variation,
-                                    'add_ons' => $c->add_ons,
-                                    'total_add_on_price' => $c->total_add_on_price,
-                                    'updated_at' => $c->updated_at
-                                ]
-                            );
-                        } else {
-                            $c->save();
-                        }
-
-                        $total_addon_price += $c['total_add_on_price'];
-                        $product_price += $price * $c['quantity'];
-                        $store_discount_amount += $c['discount_on_item'] * $c['quantity'];
-                    } else {
-                        Toastr::error(translate('messages.item_not_found'));
-                        return back();
-                    }
+                    $c->delete();
                 }
-            } else {
-                $c->delete();
+            } catch (\Throwable $th) {
+                info($th->getMessage());
             }
         }
 
@@ -959,7 +1109,7 @@ class OrderController extends Controller
             ->when($status == 'processing', function ($query) {
                 return $query->Preparing();
             })
-            ->when($status == 'food_on_the_way', function ($query) {
+            ->when($status == 'item_on_the_way', function ($query) {
                 return $query->ItemOnTheWay();
             })
             ->when($status == 'delivered', function ($query) {
@@ -1006,6 +1156,7 @@ class OrderController extends Controller
             ->when($type == 'parcel', function ($query) {
                 $query->ParcelOrder();
             })
+            ->module(Config::get('module.current_module_id'))
             ->orderBy('schedule_at', 'desc')
             ->get();
         if ($file_type == 'excel') {

@@ -93,11 +93,11 @@
                                     </td>
                                     <td>
                                         <div class="btn--container justify-content-center">
-                                            <a class="btn action-btn btn--primary btn-outline-primary" href="{{route('admin.contact.contact-view',[$contact['id']])}}" title="{{translate('messages.edit')}}"><i class="tio-invisible"></i>
+                                            <a class="btn action-btn btn--primary btn-outline-primary" href="{{route('admin.users.contact.contact-view',[$contact['id']])}}" title="{{translate('messages.edit')}}"><i class="tio-invisible"></i>
                                             </a>
                                             <a class="btn action-btn btn--danger btn-outline-danger" href="javascript:" onclick="form_alert('contact-{{$contact['id']}}','{{ translate('messages.Want to delete this message?') }}')" title="{{translate('messages.delete')}}"><i class="tio-delete-outlined"></i>
                                             </a>
-                                            <form action="{{route('admin.contact.contact-delete',[$contact['id']])}}"
+                                            <form action="{{route('admin.users.contact.contact-delete',[$contact['id']])}}"
                                                     method="post" id="contact-{{$contact['id']}}">
                                                 @csrf @method('delete')
                                             </form>
@@ -170,7 +170,7 @@
                 }
             });
             $.post({
-                url: '{{route('admin.contact.contact-search')}}',
+                url: '{{route('admin.users.contact.contact-search')}}',
                 data: formData,
                 cache: false,
                 contentType: false,

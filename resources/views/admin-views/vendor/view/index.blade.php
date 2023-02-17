@@ -29,7 +29,7 @@
                     </div>
                 </div>
                 <div class="card-footer pt-0 bg-transparent border-0">
-                        <a class="btn text-white text-capitalize bg--title h--45px w-100" href="{{route('admin.account-transaction.index')}}" title="{{translate('messages.goto')}} {{translate('messages.account_transaction')}}">{{translate('messages.collect_cash_from_store')}}</a>
+                        <a class="btn text-white text-capitalize bg--title h--45px w-100" href="{{$store->vendor->status ? route('admin.transactions.account-transaction.index') : '#'}}" title="{{translate('messages.goto')}} {{translate('messages.account_transaction')}}">{{translate('messages.collect_cash_from_store')}}</a>
                 </div>
             </div>
         </div>
@@ -97,16 +97,16 @@
                             </li>
                             <li>
                                 <i class="tio-city nav-icon"></i>
-                                {{translate('messages.address')}} : {{$store->address}}
+                                <span>{{translate('messages.address')}}</span> <span>:</span> <span>{{$store->address}}</span>
                             </li>
 
                             <li>
                                 <i class="tio-call-talking nav-icon"></i>
-                                {{translate('messages.email')}} : {{$store->email}}
+                                <span>{{translate('messages.email')}}</span> <span>:</span> <span>{{$store->email}}</span>
                             </li>
                             <li>
                                 <i class="tio-email nav-icon"></i>
-                                {{translate('messages.phone')}} : {{$store->phone}}
+                                <span>{{translate('messages.phone')}}</span> <span>:</span> <span>{{$store->phone}}</span>
                             </li>
                         </ul>
                     </div>

@@ -81,7 +81,7 @@
                                 </div>
                             @endif
                             @if($parcel_category->position == 0)
-                            <div class="form-group mb-0">
+                            {{-- <div class="form-group mb-0">
                                 <label class="input-label">{{translate('messages.module')}}</label>
                                 <select name="module_id" id="module_id" required class="form-control js-select2-custom"  data-placeholder="{{translate('messages.select')}} {{translate('messages.module')}}">
                                         <option value="" selected disabled>{{translate('messages.select')}} {{translate('messages.module')}}</option>
@@ -89,7 +89,7 @@
                                         <option value="{{$module->id}}" {{$parcel_category->module_id==$module->id?'selected':''}}>{{$module->module_name}}</option>
                                     @endforeach
                                 </select>
-                            </div>
+                            </div> --}}
                             @endif
                         </div>
                         <div class="col-lg-6">

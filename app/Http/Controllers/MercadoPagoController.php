@@ -71,7 +71,7 @@ class MercadoPagoController extends Controller
                 $order->confirmed = now();
                 $order->save();
                 $fcm_token = $order->customer->cm_firebase_token;
-                $value = Helpers::order_status_update_message('confirmed');
+                $value = Helpers::order_status_update_message('confirmed',$order->module->module_type);
                 if ($value) {
                     $data = [
                         'title' =>translate('messages.order_placed_successfully'),

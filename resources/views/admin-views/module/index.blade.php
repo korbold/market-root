@@ -62,13 +62,13 @@
                         <div class="dropdown-divider"></div> --}}
                         <span class="dropdown-header">{{ translate('messages.download') }}
                             {{ translate('messages.options') }}</span>
-                        <a id="export-excel" class="dropdown-item" href="{{route('admin.module.export', ['type'=>'excel'])}}">
+                        <a id="export-excel" class="dropdown-item" href="{{route('admin.business-settings.module.export', ['type'=>'excel'])}}">
                             <img class="avatar avatar-xss avatar-4by3 mr-2"
                                 src="{{ asset('public/assets/admin') }}/svg/components/excel.svg"
                                 alt="Image Description">
                             {{ translate('messages.excel') }}
                         </a>
-                        <a id="export-csv" class="dropdown-item" href="{{route('admin.module.export', ['type'=>'csv'])}}">
+                        <a id="export-csv" class="dropdown-item" href="{{route('admin.business-settings.module.export', ['type'=>'csv'])}}">
                             <img class="avatar avatar-xss avatar-4by3 mr-2"
                                 src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                 alt="Image Description">
@@ -125,7 +125,7 @@
                                 </td>
                                 <td>
                                     <label class="toggle-switch toggle-switch-sm" for="stocksCheckbox{{$module->id}}">
-                                    <input type="checkbox" onclick="location.href='{{route('admin.module.status',[$module['id'],$module->status?0:1])}}'"class="toggle-switch-input" id="stocksCheckbox{{$module->id}}" {{$module->status?'checked':''}}>
+                                    <input type="checkbox" onclick="location.href='{{route('admin.business-settings.module.status',[$module['id'],$module->status?0:1])}}'"class="toggle-switch-input" id="stocksCheckbox{{$module->id}}" {{$module->status?'checked':''}}>
                                         <span class="toggle-switch-label">
                                             <span class="toggle-switch-indicator"></span>
                                         </span>
@@ -135,7 +135,7 @@
                                 <td>
                                     <div class="btn--container justify-content-center">
                                         <a class="btn action-btn btn--primary btn-outline-primary"
-                                            href="{{route('admin.module.edit',[$module['id']])}}" title="{{translate('messages.edit')}} {{translate('messages.category')}}"><i class="tio-edit"></i>
+                                            href="{{route('admin.business-settings.module.edit',[$module['id']])}}" title="{{translate('messages.edit')}} {{translate('messages.category')}}"><i class="tio-edit"></i>
                                         </a>
                                     </div>
                                 </td>
@@ -194,7 +194,7 @@
                     }
                 });
                 $.post({
-                    url: '{{route('admin.module.search')}}',
+                    url: '{{route('admin.business-settings.module.search')}}',
                     data: formData,
                     cache: false,
                     contentType: false,

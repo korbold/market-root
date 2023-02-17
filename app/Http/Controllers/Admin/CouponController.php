@@ -2,17 +2,18 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
 use App\Models\Coupon;
-use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Controller;
+use Brian2694\Toastr\Facades\Toastr;
+use Illuminate\Support\Facades\Config;
 
 class CouponController extends Controller
 {
     public function add_new()
     {
-        $coupons = Coupon::with('module')->latest()->paginate(config('default_pagination'));
+        $coupons = Coupon::with('module')->where('module_id', Config::get('module.current_module_id'))->latest()->paginate(config('default_pagination'));
         return view('admin-views.coupon.index', compact('coupons'));
     }
 
@@ -24,7 +25,6 @@ class CouponController extends Controller
             'start_date' => 'required',
             'expire_date' => 'required',
             'discount' => 'required',
-            'module_id'=>'required',
             'coupon_type' => 'required|in:zone_wise,store_wise,free_delivery,first_order,default',
             'zone_ids' => 'required_if:coupon_type,zone_wise',
             'store_ids' => 'required_if:coupon_type,store_wise'
@@ -52,7 +52,7 @@ class CouponController extends Controller
             'discount_type' => $request->discount_type??'',
             'status' => 1,
             'data' => json_encode($data),
-            'module_id'=>$request->module_id,
+            'module_id'=>Config::get('module.current_module_id'),
             'created_at' => now(),
             'updated_at' => now()
         ]);
@@ -76,6 +76,7 @@ class CouponController extends Controller
             'start_date' => 'required',
             'expire_date' => 'required',
             'discount' => 'required',
+            'discount_type' => 'required_unless:discount,free_delivery',
             'zone_ids' => 'required_if:coupon_type,zone_wise',
             'store_ids' => 'required_if:coupon_type,store_wise'
         ]);
@@ -127,7 +128,7 @@ class CouponController extends Controller
 
     public function search(Request $request){
         $key = explode(' ', $request['search']);
-        $coupons=Coupon::where(function ($q) use ($key) {
+        $coupons=Coupon::where('module_id', Config::get('module.current_module_id'))->where(function ($q) use ($key) {
             foreach ($key as $value) {
                 $q->orWhere('title', 'like', "%{$value}%")
                 ->orWhere('code', 'like', "%{$value}%");

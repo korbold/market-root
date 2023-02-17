@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\CentralLogics\Helpers;
 use App\Models\Order;
+use App\Models\User;
+use Illuminate\Support\Str;
 
 class BkashPaymentController extends Controller
 {
@@ -22,12 +24,18 @@ class BkashPaymentController extends Controller
         $bkash_app_secret = $config['api_secret']; // bKash Merchant API APP SECRET
         $bkash_username = $config['username']; // bKash Merchant API USERNAME
         $bkash_password = $config['password']; // bKash Merchant API PASSWORD
-        $bkash_base_url = (env('APP_MODE') == 'live') ? 'https://checkout.pay.bka.sh/v1.2.0-beta' : 'https://checkout.sandbox.bka.sh/v1.2.0-beta';
+        $bkash_base_url = (env('APP_MODE') == 'live') ? 'https://tokenized.pay.bka.sh/v1.2.0-beta' : 'https://tokenized.sandbox.bka.sh/v1.2.0-beta';
 
-        $this->app_key = $bkash_app_key;
-        $this->app_secret = $bkash_app_secret;
-        $this->username = $bkash_username;
-        $this->password = $bkash_password;
+        // $this->app_key = $bkash_app_key;
+        // $this->app_secret = $bkash_app_secret;
+        // $this->username = $bkash_username;
+        // $this->password = $bkash_password;
+        // $this->base_url = $bkash_base_url;
+
+        $this->app_key = '4f6o0cjiki2rfm34kfdadl1eqq';
+        $this->app_secret = '2is7hdktrekvrbljjh44ll3d9l1dtjo4pasmjvs5vl5qr3fug4b';
+        $this->username = 'sandboxTokenizedUser02';
+        $this->password = 'sandboxTokenizedUser02@12345';
         $this->base_url = $bkash_base_url;
     }
 
@@ -35,24 +43,24 @@ class BkashPaymentController extends Controller
     {
         session()->forget('bkash_token');
 
-        $post_token = array(
+        $request_data = array(
             'app_key' => $this->app_key,
             'app_secret' => $this->app_secret
         );
-
-        $url = curl_init("$this->base_url/checkout/token/grant");
-        $post_token = json_encode($post_token);
+        $url = curl_init('https://tokenized.sandbox.bka.sh/v1.2.0-beta/tokenized/checkout/token/grant');
+        $request_data_json = json_encode($request_data);
         $header = array(
             'Content-Type:application/json',
-            "password:$this->password",
-            "username:$this->username"
+            'username:'.$this->username,
+            'password:'.$this->password
         );
-
         curl_setopt($url, CURLOPT_HTTPHEADER, $header);
         curl_setopt($url, CURLOPT_CUSTOMREQUEST, "POST");
         curl_setopt($url, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($url, CURLOPT_POSTFIELDS, $post_token);
+        curl_setopt($url, CURLOPT_POSTFIELDS, $request_data_json);
         curl_setopt($url, CURLOPT_FOLLOWLOCATION, 1);
+        curl_setopt($url, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
+
         $resultdata = curl_exec($url);
         curl_close($url);
 
@@ -64,90 +72,99 @@ class BkashPaymentController extends Controller
 
         session()->put('bkash_token', $response['id_token']);
 
-        return response()->json(['success', true]);
+        return $response;
     }
 
-    public function createPayment(Request $request)
+    public function make_tokenize_payment(Request $request)
     {
+        $order = Order::with(['details','customer'])->where(['id' => $request->order_id])->first();
+        $user_data = User::find($request->customer_id);
+        $response = self::getToken();
+        $auth = $response['id_token'];
+        session()->put('token', $auth);
+        $callbackURL = route('bkash-callback', ['order_id' => $request->order_id, 'token' => $auth]);
 
-        $token = session()->get('bkash_token');
+        $requestbody = array(
+            'mode' => '0011',
+            'amount' => (string)$order->order_amount,
+            'currency' => 'BDT',
+            'intent' => 'sale',
+            'payerReference' => $user_data->phone,
+            'merchantInvoiceNumber' => 'invoice_' . Str::random('15'),
+            'callbackURL' => $callbackURL
+        );
 
-        $request['intent'] = 'sale';
-        $request['currency'] = 'BDT';
-        $request['merchantInvoiceNumber'] = rand();
+        $url = curl_init($this->base_url . '/tokenized/checkout/create');
+        $requestbodyJson = json_encode($requestbody);
 
-        $url = curl_init("$this->base_url/checkout/payment/create");
-        $request_data_json = json_encode($request->all());
         $header = array(
             'Content-Type:application/json',
-            "authorization: $token",
-            "x-app-key: $this->app_key"
+            'Authorization:' . $auth,
+            'X-APP-Key:' . $this->app_key
         );
 
         curl_setopt($url, CURLOPT_HTTPHEADER, $header);
         curl_setopt($url, CURLOPT_CUSTOMREQUEST, "POST");
         curl_setopt($url, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($url, CURLOPT_POSTFIELDS, $request_data_json);
+        curl_setopt($url, CURLOPT_POSTFIELDS, $requestbodyJson);
         curl_setopt($url, CURLOPT_FOLLOWLOCATION, 1);
         curl_setopt($url, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
         $resultdata = curl_exec($url);
         curl_close($url);
-        return json_decode($resultdata, true);
+        //echo $resultdata;
+
+        $obj = json_decode($resultdata);
+        return redirect()->away($obj->{'bkashURL'});
     }
 
-    public function executePayment(Request $request)
+    public function callback(Request $request)
     {
-        $token = session()->get('bkash_token');
+        $paymentID = $_GET['paymentID'];
+        $auth = $_GET['token'];
 
-        $paymentID = $request->paymentID;
-        $url = curl_init("$this->base_url/checkout/payment/execute/" . $paymentID);
+        $request_body = array(
+            'paymentID' => $paymentID
+        );
+        $url = curl_init($this->base_url . '/tokenized/checkout/execute');
+
+        $request_body_json = json_encode($request_body);
+
         $header = array(
             'Content-Type:application/json',
-            "authorization:$token",
-            "x-app-key:$this->app_key"
+            'Authorization:' . $auth,
+            'X-APP-Key:' . $this->app_key
         );
-
         curl_setopt($url, CURLOPT_HTTPHEADER, $header);
         curl_setopt($url, CURLOPT_CUSTOMREQUEST, "POST");
         curl_setopt($url, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($url, CURLOPT_POSTFIELDS, $request_body_json);
         curl_setopt($url, CURLOPT_FOLLOWLOCATION, 1);
+        curl_setopt($url, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
         $resultdata = curl_exec($url);
+        info($resultdata);
         curl_close($url);
-        return json_decode($resultdata, true);
-    }
+        $obj = json_decode($resultdata);
 
-    public function queryPayment(Request $request)
-    {
-        $token = session()->get('bkash_token');
-        $paymentID = $request->payment_info['payment_id'];
-
-        $url = curl_init("$this->base_url/checkout/payment/query/" . $paymentID);
-        $header = array(
-            'Content-Type:application/json',
-            "authorization:$token",
-            "x-app-key:$this->app_key"
-        );
-
-        curl_setopt($url, CURLOPT_HTTPHEADER, $header);
-        curl_setopt($url, CURLOPT_CUSTOMREQUEST, "GET");
-        curl_setopt($url, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($url, CURLOPT_FOLLOWLOCATION, 1);
-        $resultdata = curl_exec($url);
-        curl_close($url);
-        return json_decode($resultdata, true);
-    }
-
-    public function bkashSuccess(Request $request)
-    {
-        $order = Order::with(['details'])->where(['id' => session('order_id'), 'user_id'=>session('customer_id')])->first();
-        $order->transaction_reference = $request->trxID;
+        $order = Order::find($request['order_id']);
         $order->payment_method = 'bkash';
-        $order->payment_status = 'paid';
         $order->order_status = 'confirmed';
-        $order->confirmed = now();
-        $order->save();
-        Helpers::send_order_notification($order);
-        return response()->json(['status' => true]);
+        $order->payment_status = 'paid';
+        $order->transaction_reference = $obj->trxID ?? null;
+
+        if ($obj->statusCode == '0000') {
+            $order->save();
+            if ($order->callback != null) {
+                return redirect($order->callback . '&status=success');
+            }else{
+                return \redirect()->route('payment-success');
+            }
+        } else {
+            if ($order->callback != null) {
+                return redirect($order->callback . '&status=fail');
+            }else{
+                return \redirect()->route('payment-fail');
+            }
+        }
     }
 }
 

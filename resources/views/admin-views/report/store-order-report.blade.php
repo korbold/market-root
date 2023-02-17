@@ -29,15 +29,15 @@
         <!-- Page Header Menu -->
         <ul class="nav nav-tabs page-header-tabs mb-2">
             <li class="nav-item">
-                <a href="{{ route('admin.report.store-summary-report') }}"
+                <a href="{{ route('admin.transactions.report.store-summary-report') }}"
                     class="nav-link">{{ translate('Summary Report') }}</a>
             </li>
             <li class="nav-item">
-                <a href="{{ route('admin.report.store-sales-report') }}"
+                <a href="{{ route('admin.transactions.report.store-sales-report') }}"
                     class="nav-link">{{ translate('Sales Report') }}</a>
             </li>
             <li class="nav-item">
-                <a href="{{ route('admin.report.store-order-report') }}"
+                <a href="{{ route('admin.transactions.report.store-order-report') }}"
                     class="nav-link active">{{ translate('Order Report') }}</a>
             </li>
             {{-- <li class="nav-item">
@@ -50,7 +50,7 @@
                 <h5 class="form-label m-0 mb-3">
                     {{ translate('Filter Data') }}
                 </h5>
-                <form action="{{ route('admin.report.set-date') }}" method="post">
+                <form action="{{ route('admin.transactions.report.set-date') }}" method="post">
                     @csrf
                     <div class="row g-3">
                         <div class="col-md-4 col-sm-6">
@@ -333,14 +333,14 @@
                             <span class="dropdown-header">{{ translate('messages.download') }}
                                 {{ translate('messages.options') }}</span>
                             <a id="export-excel" class="dropdown-item"
-                                href="{{ route('admin.report.store-order-report-export', ['type' => 'excel', request()->getQueryString()]) }}">
+                                href="{{ route('admin.transactions.report.store-order-report-export', ['type' => 'excel', request()->getQueryString()]) }}">
                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                     src="{{ asset('public/assets/admin') }}/svg/components/excel.svg"
                                     alt="Image Description">
                                 {{ translate('messages.excel') }}
                             </a>
                             <a id="export-csv" class="dropdown-item"
-                                href="{{ route('admin.report.store-order-report-export', ['type' => 'csv', request()->getQueryString()]) }}">
+                                href="{{ route('admin.transactions.report.store-order-report-export', ['type' => 'csv', request()->getQueryString()]) }}">
                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                     src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                     alt="Image Description">
@@ -379,7 +379,7 @@
                                     </td>
                                     <td class="table-column-pl-0">
                                         <a
-                                            href="{{ route('admin.order.details', ['id' => $order['id']]) }}">{{ $order['id'] }}</a>
+                                            href="{{ route('admin.order.details', ['id' => $order['id'],'module_id'=>$order['module_id']]) }}">{{ $order['id'] }}</a>
                                     </td>
                                     <td>
                                         <div>
@@ -394,7 +394,7 @@
                                     <td>
                                         @if ($order->customer)
                                             <a class="text-body text-capitalize"
-                                                href="{{ route('admin.customer.view', [$order['user_id']]) }}">
+                                                href="{{ route('admin.transactions.customer.view', [$order['user_id']]) }}">
                                                 <strong>{{ $order->customer['f_name'] . ' ' . $order->customer['l_name'] }}</strong>
                                                 <div>{{ $order->customer['phone'] }}</div>
                                             </a>
@@ -433,11 +433,11 @@
                                     <td>
                                         <div class="btn--container justify-content-center">
                                             <a class="ml-2 btn btn-sm btn--warning btn-outline-warning action-btn"
-                                                href="{{ route('admin.order.details', ['id' => $order['id']]) }}">
+                                                href="{{ route('admin.order.details', ['id' => $order['id'],'module_id'=>$order['module_id']]) }}">
                                                 <i class="tio-invisible"></i>
                                             </a>
                                             <a class="ml-2 btn btn-sm btn--primary btn-outline-primary action-btn"
-                                                href="{{ route('admin.order.generate-invoice', ['id' => $order['id']]) }}">
+                                                href="{{ route('admin.transactions.order.generate-invoice', ['id' => $order['id']]) }}">
                                                 <i class="tio-print"></i>
                                             </a>
                                         </div>
@@ -578,7 +578,7 @@
                 }
             });
             $.post({
-                url: '{{ route('admin.report.store-order-report-search') }}',
+                url: '{{ route('admin.transactions.report.store-order-report-search') }}',
                 data: formData,
                 cache: false,
                 contentType: false,

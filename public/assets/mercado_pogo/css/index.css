@@ -67,12 +67,12 @@ main {
 
 .shopping-cart .items .product .info {
     padding-top: 0px;
-    text-align: left;
+    text-align: start;
 }
 
 .shopping-cart .items .product .info .product-details .product-detail {
     padding-top: 40px;
-    padding-left: 40px;
+    padding-inline-start: 40px;
 }
 
 .shopping-cart .items .product .info .product-details h5 {
@@ -141,7 +141,7 @@ main {
 
     .shopping-cart .items .product .info .product-details .product-detail {
         padding-top: 40px;
-        padding-left: 40px;
+        padding-inline-start: 40px;
     }
 
     .shopping-cart .items .product .info .price {
@@ -167,8 +167,8 @@ main {
 
 .payment-form {
     padding-bottom: 10px;
-    margin-right: 15px;
-    margin-left: 15px;
+    margin-inline-end: 15px;
+    margin-inline-start: 15px;
     font-family: "Helvetica Neue",Helvetica,sans-serif;
 }
 
@@ -277,8 +277,8 @@ main {
 }
 
 .payment-form .date-separator {
-    margin-left: 10px;
-    margin-right: 10px;
+    margin-inline-start: 10px;
+    margin-inline-end: 10px;
     margin-top: 5px;
 }
 
@@ -351,14 +351,14 @@ footer p a:hover {
     .footer_logo {
         margin: 0 0 0 0;
         width: 20%;
-        text-align: left;
+        text-align: start;
         position: absolute;
     }
 
     .footer_text {
         margin: 0 0 0 65%;
         width: 200px;
-        text-align: left;
+        text-align: start;
         position: absolute
     }
 

@@ -247,6 +247,9 @@
                                 @if(\App\CentralLogics\Helpers::get_store_data()->module->module_type == 'food')
                                 <th class="px-4 border-0"><h4 class="m-0 text-capitalize">{{translate('addons')}}</h4></th>
                                 @endif
+                                <th class="px-4 border-0">
+                                    <h4 class="m-0 text-capitalize">{{ translate('tags') }}</h4>
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
@@ -275,14 +278,59 @@
                                     @endif
                                 </td>
                                 <td class="px-4">
-                                    @if($product->variations && is_array(json_decode($product['variations'],true)))
-                                    @foreach(json_decode($product['variations'],true) as $variation)
-                                        <span class="d-block mb-1 text-capitalize">
-                                            {{$variation['type']}} : {{\App\CentralLogics\Helpers::format_currency($variation['price'])}}
-                                        </span>
-                                    @endforeach
-                                @endif
-                                </td>
+                                    @if ($product->module->module_type == 'food')
+                                        @if ($product->food_variations && is_array(json_decode($product['food_variations'], true)))
+                                            @foreach (json_decode($product->food_variations, true) as $variation)
+                                                @if (isset($variation['price']))
+                                                    <span class="d-block mb-1 text-capitalize">
+                                                        <strong>
+                                                            {{ translate('please_update_the_food_variations.') }}
+                                                        </strong>
+                                                    </span>
+                                                @break
+
+                                            @else
+                                                <span class="d-block text-capitalize">
+                                                    <strong>
+                                                        {{ $variation['name'] }} -
+                                                    </strong>
+                                                    @if ($variation['type'] == 'multi')
+                                                        {{ translate('messages.multiple_select') }}
+                                                    @elseif($variation['type'] == 'single')
+                                                        {{ translate('messages.single_select') }}
+                                                    @endif
+                                                    @if ($variation['required'] == 'on')
+                                                        - ({{ translate('messages.required') }})
+                                                    @endif
+                                                </span>
+
+                                                @if ($variation['min'] != 0 && $variation['max'] != 0)
+                                                    ({{ translate('messages.Min_select') }}: {{ $variation['min'] }} -
+                                                    {{ translate('messages.Max_select') }}: {{ $variation['max'] }})
+                                                @endif
+
+                                                @if (isset($variation['values']))
+                                                    @foreach ($variation['values'] as $value)
+                                                        <span class="d-block text-capitalize">
+                                                            &nbsp; &nbsp; {{ $value['label'] }} :
+                                                            <strong>{{ \App\CentralLogics\Helpers::format_currency($value['optionPrice']) }}</strong>
+                                                        </span>
+                                                    @endforeach
+                                                @endif
+                                            @endif
+                                        @endforeach
+                                    @endif
+                                @else
+                                    @if ($product->variations && is_array(json_decode($product['variations'], true)))
+                                        @foreach (json_decode($product['variations'], true) as $variation)
+                                            <span class="d-block mb-1 text-capitalize">
+                                                {{ $variation['type'] }} :
+                                                {{ \App\CentralLogics\Helpers::format_currency($variation['price']) }}
+                                            </span>
+                                        @endforeach
+                                    @endif
+                            </td>
+                            @endif
                                 @if(\App\CentralLogics\Helpers::get_store_data()->module->module_type == 'food')
                                 <td class="px-4">
                                     @if (config('module.'.$product->module->module_type)['add_on'])
@@ -294,6 +342,13 @@
                                 @endif
                                 </td>
                                 @endif
+                                @if ($product->tags)
+                                <td>
+                                    @foreach($product->tags as $c) 
+                                        {{$c->tag.','}} 
+                                    @endforeach
+                                </td>
+                            @endif
                             </tr>
                         </tbody>
                     </table>

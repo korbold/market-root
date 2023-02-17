@@ -22,7 +22,7 @@
     <!-- Page Heading -->
     <div class="card">
         <div class="card-body">
-            <form action="{{route('admin.account-transaction.store')}}" method='post' id="add_transaction">
+            <form action="{{route('admin.transactions.account-transaction.store')}}" method='post' id="add_transaction">
                 @csrf
                 <div class="row g-3">
                     <div class="col-lg-4 col-sm-6">
@@ -131,13 +131,13 @@
                                 <div class="dropdown-divider"></div> --}}
                                 <span class="dropdown-header">{{ translate('messages.download') }}
                                     {{ translate('messages.options') }}</span>
-                                <a id="export-excel" class="dropdown-item" href="{{route('admin.export-account-transaction', ['type'=>'excel'])}}">
+                                <a id="export-excel" class="dropdown-item" href="{{route('admin.transactions.account-transaction.export', ['type'=>'excel'])}}">
                                     <img class="avatar avatar-xss avatar-4by3 mr-2"
                                         src="{{ asset('public/assets/admin') }}/svg/components/excel.svg"
                                         alt="Image Description">
                                     {{ translate('messages.excel') }}
                                 </a>
-                                <a id="export-csv" class="dropdown-item" href="{{route('admin.export-account-transaction', ['type'=>'csv'])}}">
+                                <a id="export-csv" class="dropdown-item" href="{{route('admin.transactions.account-transaction.export', ['type'=>'csv'])}}">
                                     <img class="avatar avatar-xss avatar-4by3 mr-2"
                                         src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                         alt="Image Description">
@@ -175,9 +175,9 @@
                                     <td scope="row">{{$k+$account_transaction->firstItem()}}</td>
                                     <td>
                                         @if($at->store)
-                                        <a href="{{route('admin.store.view',[$at->store['id']])}}">{{ Str::limit($at->store->name, 20, '...') }}</a>
+                                        <a href="{{route('admin.store.view',[$at->store['id'],'module_id'=>$at->store['module_id']])}}">{{ Str::limit($at->store->name, 20, '...') }}</a>
                                         @elseif($at->deliveryman)
-                                        <a href="{{route('admin.delivery-man.preview',[$at->deliveryman->id])}}">{{ $at->deliveryman->f_name }} {{ $at->deliveryman->l_name }}</a>
+                                        <a href="{{route('admin.users.delivery-man.preview',[$at->deliveryman->id])}}">{{ $at->deliveryman->f_name }} {{ $at->deliveryman->l_name }}</a>
                                         @else
                                             {{translate('messages.not_found')}}
                                         @endif
@@ -192,7 +192,7 @@
                                     </div></td>
                                     <td>
                                         <div class="btn--container justify-content-center">
-                                            <a href="{{route('admin.account-transaction.show',[$at['id']])}}"
+                                            <a href="{{route('admin.transactions.account-transaction.view',[$at['id']])}}"
                                             class="btn action-btn btn--warning btn-outline-warning"><i class="tio-visible"></i>
                                             </a>
                                         </div>
@@ -318,7 +318,7 @@
             }
         });
         $.post({
-            url: '{{route('admin.account-transaction.store')}}',
+            url: '{{route('admin.transactions.account-transaction.store')}}',
             data: formData,
             cache: false,
             contentType: false,
@@ -337,7 +337,7 @@
                         ProgressBar: true
                     });
                     setTimeout(function () {
-                        location.href = '{{route('admin.account-transaction.index')}}';
+                        location.href = '{{route('admin.transactions.account-transaction.index')}}';
                     }, 2000);
                 }
             }
@@ -357,7 +357,7 @@
                 }
             });
             $.post({
-                url: '{{route('admin.search-account-transaction')}}',
+                url: '{{route('admin.transactions.account-transaction.search')}}',
                 data: formData,
                 cache: false,
                 contentType: false,

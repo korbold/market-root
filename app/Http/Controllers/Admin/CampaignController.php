@@ -9,7 +9,7 @@ use App\Models\Campaign;
 use App\Models\ItemCampaign;
 use App\Models\Store;
 use Brian2694\Toastr\Facades\Toastr;
-use Carbon\Carbon;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Storage;
 use App\CentralLogics\Helpers;
 use App\Models\Translation;
@@ -25,10 +25,10 @@ class CampaignController extends Controller
     {
         if($type=='basic')
         {
-            $campaigns=Campaign::with('module')->latest()->paginate(config('default_pagination'));
+            $campaigns=Campaign::with('module')->where('module_id', Config::get('module.current_module_id'))->latest()->paginate(config('default_pagination'));
         }
         else{
-            $campaigns=ItemCampaign::latest()->paginate(config('default_pagination'));
+            $campaigns=ItemCampaign::where('module_id', Config::get('module.current_module_id'))->latest()->paginate(config('default_pagination'));
         }
         
         return view('admin-views.campaign.'.$type.'.list', compact('campaigns'));
@@ -40,7 +40,6 @@ class CampaignController extends Controller
             'title' => 'required|unique:campaigns|max:191',
             'description'=>'max:1000',
             'image' => 'required',
-            'module_id'=>'required'
         ]);
         
         if ($validator->fails()) {
@@ -55,7 +54,7 @@ class CampaignController extends Controller
         $campaign->end_date = $request->end_date;
         $campaign->start_time = $request->start_time;
         $campaign->end_time = $request->end_time;
-        $campaign->module_id = $request->module_id;
+        $campaign->module_id = Config::get('module.current_module_id');
         $campaign->save();
         
         $data = [];
@@ -232,6 +231,43 @@ class CampaignController extends Controller
                 array_push($variations, $item);
             }
         }
+
+        // food variation
+        $food_variations = [];
+        if (isset($request->options)) {
+            foreach (array_values($request->options) as $key => $option) {
+
+                $temp_variation['name'] = $option['name'];
+                $temp_variation['type'] = $option['type'];
+                $temp_variation['min'] = $option['min'] ?? 0;
+                $temp_variation['max'] = $option['max'] ?? 0;
+                $temp_variation['required'] = $option['required'] ?? 'off';
+                if ($option['min'] > 0 &&  $option['min'] > $option['max']) {
+                    $validator->getMessageBag()->add('name', translate('messages.minimum_value_can_not_be_greater_then_maximum_value'));
+                    return response()->json(['errors' => Helpers::error_processor($validator)]);
+                }
+                if (!isset($option['values'])) {
+                    $validator->getMessageBag()->add('name', translate('messages.please_add_options_for') . $option['name']);
+                    return response()->json(['errors' => Helpers::error_processor($validator)]);
+                }
+                if ($option['max'] > count($option['values'])) {
+                    $validator->getMessageBag()->add('name', translate('messages.please_add_more_options_or_change_the_max_value_for') . $option['name']);
+                    return response()->json(['errors' => Helpers::error_processor($validator)]);
+                }
+                $temp_value = [];
+
+                foreach (array_values($option['values']) as $value) {
+                    if (isset($value['label'])) {
+                        $temp_option['label'] = $value['label'];
+                    }
+                    $temp_option['optionPrice'] = $value['optionPrice'];
+                    array_push($temp_value, $temp_option);
+                }
+                $temp_variation['values'] = $temp_value;
+                array_push($food_variations, $temp_variation);
+            }
+        }
+
         $campaign->admin_id = auth('admin')->id();
         $campaign->title = $request->title[array_search('en', $request->lang)];
         $campaign->description = $request->description[array_search('en', $request->lang)];
@@ -241,6 +277,7 @@ class CampaignController extends Controller
         $campaign->start_time = $request->start_time;
         $campaign->end_time = $request->end_time;
         $campaign->variations = json_encode($variations);
+        $campaign->food_variations = json_encode($food_variations);
         $campaign->price = $request->price;
         $campaign->discount = $request->discount_type == 'amount' ? $request->discount : $request->discount;
         $campaign->discount_type = $request->discount_type;
@@ -248,8 +285,9 @@ class CampaignController extends Controller
         $campaign->add_ons = $request->has('addon_ids') ? json_encode($request->addon_ids) : json_encode([]);
         $campaign->store_id = $request->store_id;
         $campaign->veg = $request->veg;
-        $campaign->module_id= $request->module_id;
+        $campaign->module_id= Config::get('module.current_module_id');
         $campaign->stock= $request->current_stock;
+        $campaign->unit_id = $request->unit;
         $campaign->save();
         
         $data = [];
@@ -371,6 +409,40 @@ class CampaignController extends Controller
                 array_push($variations, $item);
             }
         }
+
+        $food_variations = [];
+        if (isset($request->options)) {
+            foreach (array_values($request->options) as $key => $option) {
+                $temp_variation['name'] = $option['name'];
+                $temp_variation['type'] = $option['type'];
+                $temp_variation['min'] = $option['min'] ?? 0;
+                $temp_variation['max'] = $option['max'] ?? 0;
+                if ($option['min'] > 0 &&  $option['min'] > $option['max']) {
+                    $validator->getMessageBag()->add('name', translate('messages.minimum_value_can_not_be_greater_then_maximum_value'));
+                    return response()->json(['errors' => Helpers::error_processor($validator)]);
+                }
+                if (!isset($option['values'])) {
+                    $validator->getMessageBag()->add('name', translate('messages.please_add_options_for') . $option['name']);
+                    return response()->json(['errors' => Helpers::error_processor($validator)]);
+                }
+                if ($option['max'] > count($option['values'])) {
+                    $validator->getMessageBag()->add('name', translate('messages.please_add_more_options_or_change_the_max_value_for') . $option['name']);
+                    return response()->json(['errors' => Helpers::error_processor($validator)]);
+                }
+                $temp_variation['required'] = $option['required'] ?? 'off';
+                $temp_value = [];
+                foreach (array_values($option['values']) as $value) {
+                    if (isset($value['label'])) {
+                        $temp_option['label'] = $value['label'];
+                    }
+                    $temp_option['optionPrice'] = $value['optionPrice'];
+                    array_push($temp_value, $temp_option);
+                }
+                $temp_variation['values'] = $temp_value;
+                array_push($food_variations, $temp_variation);
+            }
+        }
+
         $campaign->title = $request->title[array_search('en', $request->lang)];
         $campaign->description = $request->description[array_search('en', $request->lang)];
         $campaign->image = $request->has('image') ? Helpers::update('campaign/', $campaign->image, 'png', $request->file('image')) : $campaign->image;
@@ -379,12 +451,14 @@ class CampaignController extends Controller
         $campaign->start_time = $request->start_time;
         $campaign->end_time = $request->end_time;
         $campaign->variations = json_encode($variations);
+        $campaign->food_variations = json_encode($food_variations);
         $campaign->price = $request->price;
         $campaign->discount = $request->discount_type == 'amount' ? $request->discount : $request->discount;
         $campaign->discount_type = $request->discount_type;
         $campaign->attributes = $request->has('attribute_id') ? json_encode($request->attribute_id) : json_encode([]);
         $campaign->add_ons = $request->has('addon_ids') ? json_encode($request->addon_ids) : json_encode([]);
         $campaign->veg = $request->veg;
+        $campaign->unit_id = $request->unit;
         $campaign->stock= $request->current_stock;
         $campaign->save();
 
@@ -512,7 +586,7 @@ class CampaignController extends Controller
 
     public function searchBasic(Request $request){
         $key = explode(' ', $request['search']);
-        $campaigns=Campaign::where(function ($q) use ($key) {
+        $campaigns=Campaign::where('module_id', Config::get('module.current_module_id'))->where(function ($q) use ($key) {
             foreach ($key as $value) {
                 $q->orWhere('title', 'like', "%{$value}%");
             }
@@ -524,7 +598,7 @@ class CampaignController extends Controller
     }
     public function searchItem(Request $request){
         $key = explode(' ', $request['search']);
-        $campaigns=ItemCampaign::where(function ($q) use ($key) {
+        $campaigns=ItemCampaign::where('module_id', Config::get('module.current_module_id'))->where(function ($q) use ($key) {
             foreach ($key as $value) {
                 $q->orWhere('title', 'like', "%{$value}%");
             }

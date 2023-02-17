@@ -99,21 +99,6 @@
                             <div class="row g-3 my-0">
                                 <div class="col-lg-4">
                                     <div class="form-group">
-                                        <label class="input-label" for="latitude">{{translate('messages.latitude')}}<span
-                                                class="input-label-secondary" title="{{translate('messages.store_lat_lng_warning')}}"><img src="{{asset('/public/assets/admin/img/info-circle.svg')}}" alt="{{translate('messages.store_lat_lng_warning')}}"></span></label>
-                                        <input type="text" id="latitude"
-                                                name="latitude" class="form-control"
-                                                placeholder="{{ translate('messages.Ex:') }} -94.22213" value="{{old('latitude')}}" required readonly>
-                                    </div>
-                                    <div class="form-group mb-5">
-                                        <label class="input-label" for="longitude">{{translate('messages.longitude')}}<span
-                                                class="input-label-secondary" title="{{translate('messages.store_lat_lng_warning')}}"><img src="{{asset('/public/assets/admin/img/info-circle.svg')}}" alt="{{translate('messages.store_lat_lng_warning')}}"></span></label>
-                                        <input type="text"
-                                                name="longitude" class="form-control"
-                                                placeholder="{{ translate('messages.Ex:') }} 103.344322" id="longitude" value="{{old('longitude')}}" required readonly>
-                                    </div>
-
-                                    <div class="form-group">
                                         <label class="input-label" for="choice_zones">{{translate('messages.zone')}}<span
                                                 class="input-label-secondary" title="{{translate('messages.select_zone_for_map')}}"><img src="{{asset('/public/assets/admin/img/info-circle.svg')}}" alt="{{translate('messages.select_zone_for_map')}}"></span></label>
                                         <select name="zone_id" id="choice_zones" required
@@ -130,17 +115,27 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="form-group mb-0">
+                                    <div class="form-group">
+                                        <label class="input-label" for="latitude">{{translate('messages.latitude')}}<span
+                                                class="input-label-secondary" title="{{translate('messages.store_lat_lng_warning')}}"><img src="{{asset('/public/assets/admin/img/info-circle.svg')}}" alt="{{translate('messages.store_lat_lng_warning')}}"></span></label>
+                                        <input type="text" id="latitude"
+                                                name="latitude" class="form-control"
+                                                placeholder="{{ translate('messages.Ex:') }} -94.22213" value="{{old('latitude')}}" required readonly>
+                                    </div>
+                                    <div class="form-group mb-5">
+                                        <label class="input-label" for="longitude">{{translate('messages.longitude')}}<span
+                                                class="input-label-secondary" title="{{translate('messages.store_lat_lng_warning')}}"><img src="{{asset('/public/assets/admin/img/info-circle.svg')}}" alt="{{translate('messages.store_lat_lng_warning')}}"></span></label>
+                                        <input type="text"
+                                                name="longitude" class="form-control"
+                                                placeholder="{{ translate('messages.Ex:') }} 103.344322" id="longitude" value="{{old('longitude')}}" required readonly>
+                                    </div>
+                                    {{-- <div class="form-group mb-0">
                                         <label class="input-label">{{translate('messages.module')}}</label>
                                         <select name="module_id" id="module_id" required
                                                 class="js-data-example-ajax form-control"  data-placeholder="{{translate('messages.select')}} {{translate('messages.module')}}">
-                                                {{-- <option value="" selected disabled>{{translate('messages.select')}} {{translate('messages.module')}}</option>
-                                            @foreach(\App\Models\Module::notParcel()->get() as $module)
-                                                <option value="{{$module->id}}">{{$module->module_name}}</option>
-                                            @endforeach --}}
                                         </select>
                                         <small class="text-danger">{{translate('messages.module_change_warning')}}</small>
-                                    </div>
+                                    </div> --}}
                                 </div>
                                 <div class="col-lg-8">
                                     <input id="pac-input" class="controls rounded"
@@ -527,7 +522,7 @@
 
             $('#module_id').select2({
                     ajax: {
-                         url: '{{url('/')}}/store/get-all-modules/',
+                         url: '{{url('/')}}/store/get-all-modules',
                         data: function (params) {
                             return {
                                 q: params.term, // search term

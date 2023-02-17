@@ -61,7 +61,7 @@
                                         for="exampleFormControlInput1">{{translate('messages.name')}}</label>
                                     <input type="text" name="name" id="name" class="form-control" placeholder="{{translate('messages.new_zone')}}" value="{{old('name')}}" required>
                                 </div>
-                                <div class="d-flex flex-wrap select--all-checkes">
+                                {{-- <div class="d-flex flex-wrap select--all-checkes">
                                     <h5 class="input-label m-0 text-capitalize">{{translate('messages.Payment Method')}} </h5>
                                 </div>
                                 <div class="check--item-wrapper mb-1">
@@ -72,14 +72,6 @@
                                             <label class="form-check-label qcont text-dark" for="cash_on_delivery">{{translate('messages.Cash On Delivery')}}</label>
                                         </div>
                                     </div>
-                                    <!-- transferencia -->
-                                    <div class="check-item">
-                                        <div class="form-group form-check form--check">
-                                            <input type="checkbox" name="transfer_payment" value="transfer_payment" class="form-check-input"
-                                                   id="transfer_payment">
-                                            <label class="form-check-label qcont text-dark" for="transfer_payment">{{translate('messages.transfer_payment')}}</label>
-                                        </div>
-                                    </div>
                                     <div class="check-item">
                                         <div class="form-group form-check form--check">
                                             <input type="checkbox" name="digital_payment" value="digital_payment" class="form-check-input"
@@ -87,7 +79,7 @@
                                             <label class="form-check-label qcont text-dark" for="digital_payment">{{translate('messages.digital payment')}}</label>
                                         </div>
                                     </div>
-                                </div>
+                                </div> --}}
                                 <div class="form-group mb-3 d-none">
                                     <label class="input-label"
                                         for="exampleFormControlInput1">{{ translate('Coordinates') }}<span class="input-label-secondary" title="{{translate('messages.draw_your_zone_on_the_map')}}">{{translate('messages.draw_your_zone_on_the_map')}}</span></label>
@@ -211,6 +203,8 @@
                                 <th class="border-0" >{{translate('messages.stores')}}</th>
                                 <th class="border-0" >{{translate('messages.deliverymen')}}</th>
                                 <th class="border-0" >{{translate('messages.status')}}</th>
+                                <th class="border-0" >{{translate('messages.digital_payment')}}</th>
+                                <th class="border-0" >{{translate('messages.cash_on_delivery')}}</th>
                                 <th class="border-0 text-center" >{{translate('messages.action')}}</th>
                             </tr>
                             </thead>
@@ -238,12 +232,32 @@
                                         </form>
                                     </td>
                                     <td>
+                                        <label class="toggle-switch toggle-switch-sm" for="digital_paymentCheckbox{{$zone->id}}">
+                                            <input type="checkbox" onclick="status_form_alert('digital_payment-{{$zone['id']}}','{{ translate('Want to change digital payment for this zone ?') }}', event)" class="toggle-switch-input" id="digital_paymentCheckbox{{$zone->id}}" {{$zone->digital_payment?'checked':''}}>
+                                            <span class="toggle-switch-label">
+                                                <span class="toggle-switch-indicator"></span>
+                                            </span>
+                                        </label>
+                                        <form action="{{route('admin.zone.digital-payment',[$zone['id'],$zone->digital_payment?0:1])}}" method="get" id="digital_payment-{{$zone['id']}}">
+                                        </form>
+                                    </td>
+                                    <td>
+                                        <label class="toggle-switch toggle-switch-sm" for="cashOnDeliveryCheckbox{{$zone->id}}">
+                                            <input type="checkbox" onclick="status_form_alert('cash_on_delivery-{{$zone['id']}}','{{ translate('Want to change cash on delivery for this zone ?') }}', event)" class="toggle-switch-input" id="cashOnDeliveryCheckbox{{$zone->id}}" {{$zone->cash_on_delivery?'checked':''}}>
+                                            <span class="toggle-switch-label">
+                                                <span class="toggle-switch-indicator"></span>
+                                            </span>
+                                        </label>
+                                        <form action="{{route('admin.zone.cash-on-delivery',[$zone['id'],$zone->cash_on_delivery?0:1])}}" method="get" id="cash_on_delivery-{{$zone['id']}}">
+                                        </form>
+                                    </td>
+                                    <td>
                                         <div class="btn--container justify-content-center">
                                             <a class="btn action-btn btn--primary btn-outline-primary"
-                                                href="{{route('admin.zone.edit',[$zone['id']])}}" title="{{translate('messages.edit')}} {{translate('messages.zone')}}"><i class="tio-edit"></i>
+                                                href="{{route('admin.business-settings.zone.edit',[$zone['id']])}}" title="{{translate('messages.edit')}} {{translate('messages.zone')}}"><i class="tio-edit"></i>
                                             </a>
                                             <a class="btn action-btn btn--warning btn-outline-warning" title="Module Setup"
-                                                href="{{route('admin.zone.module-setup',[$zone['id']])}}"><i class="tio-settings"></i>
+                                                href="{{route('admin.business-settings.zone.module-setup',[$zone['id']])}}"><i class="tio-settings"></i>
                                             </a>
                                             <a class="btn action-btn btn--danger btn-outline-danger" href="javascript:"
                                             onclick="form_alert('zone-{{$zone['id']}}','{{ translate('Want to delete this zone ?') }}')" title="{{translate('messages.delete')}} {{translate('messages.zone')}}"><i class="tio-delete-outlined"></i>

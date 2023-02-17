@@ -4,7 +4,12 @@
 
 
 @section('content')
-    <?php $campaign_order = $order->details[0]->campaign ? true : false; ?>
+    <?php
+    if (count($order->details) > 0) {
+        $campaign_order = $order->details[0]->campaign ? true : false;
+        $tax_included =0;
+    }
+    ?>
     <div class="content container-fluid">
         <!-- Page Header -->
         <div class="page-header">
@@ -120,7 +125,7 @@
                                 <h6 class="text-capitalize">{{ translate('messages.order') }}
                                     {{ translate('messages.type') }}
                                     : <label
-                                        class="fz--10 badge badge-soft-primary">{{ translate(str_replace('_', ' ', $order['order_type'])) }}</label>
+                                        class="fz--10 badge m-0 badge-soft-primary">{{ translate(str_replace('_', ' ', $order['order_type'])) }}</label>
                                 </h6>
                                 <h6>
                                     {{ translate('messages.order_status') }} :
@@ -156,14 +161,64 @@
                                     @endif
                                 </h6>
                                 @if ($order->order_attachment)
+                                    @if ($order->prescription_order)
+                                        @php
+                                            $order_images = json_decode($order->order_attachment);
+                                        @endphp
+                                        <h5 class="text-dark">
+                                            {{ translate('messages.prescription') }}:
+                                        </h5>
+                                        <div class="d-flex flex-wrap" style="gap:15px">
+                                            @foreach ($order_images as $key => $item)
+                                                <div>
+                                                    <button class="btn w-100 px-0" data-toggle="modal"
+                                                        data-target="#imagemodal{{ $key }}"
+                                                        title="{{ translate('messages.order') }} {{ translate('messages.attachment') }}">
+                                                        <div class="gallary-card ml-auto">
+                                                            <img src="{{ asset('storage/app/' . 'public/order/' . $item) }}"
+                                                                alt="{{ translate('messages.prescription') }}"
+                                                                class="initial--22 object-cover">
+                                                        </div>
+                                                    </button>
+                                                </div>
+                                                <div class="modal fade" id="imagemodal{{ $key }}" tabindex="-1"
+                                                    role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+                                                    <div class="modal-dialog">
+                                                        <div class="modal-content">
+                                                            <div class="modal-header">
+                                                                <h4 class="modal-title" id="myModalLabel">
+                                                                    {{ translate('messages.prescription') }}</h4>
+                                                                <button type="button" class="close"
+                                                                    data-dismiss="modal"><span
+                                                                        aria-hidden="true">&times;</span><span
+                                                                        class="sr-only">{{ translate('messages.cancel') }}</span></button>
+                                                            </div>
+                                                            <div class="modal-body">
+                                                                <img src="{{ asset('storage/app/' . 'public/order/' . $item) }}"
+                                                                    class="initial--22 w-100">
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <a class="btn btn-primary"
+                                                                    href="{{ route('admin.file-manager.download', base64_encode('public/order/' . $item)) }}"><i
+                                                                        class="tio-download"></i>
+                                                                    {{ translate('messages.download') }}
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    @else
                                     <h5 class="text-dark">
                                         {{ translate('messages.prescription') }}:
                                     </h5>
-                                    <button class="btn w-100 p-0" data-toggle="modal" data-target="#imagemodal"
+                                    <button class="btn w-100 px-0" data-toggle="modal" data-target="#imagemodal"
                                         title="{{ translate('messages.order') }} {{ translate('messages.attachment') }}">
                                         <div class="gallary-card ml-auto">
                                             <img src="{{ asset('storage/app/' . 'public/order/' . $order->order_attachment) }}"
-                                                alt="{{ translate('messages.prescription') }}" class="w-50p h-auto">
+                                                alt="{{ translate('messages.prescription') }}"
+                                                class="initial--22 object-cover">
                                         </div>
                                     </button>
                                     <div class="modal fade" id="imagemodal" tabindex="-1" role="dialog"
@@ -179,7 +234,7 @@
                                                 </div>
                                                 <div class="modal-body">
                                                     <img src="{{ asset('storage/app/' . 'public/order/' . $order->order_attachment) }}"
-                                                        class="w-100 h-auto">
+                                                        class="initial--22 w-100">
                                                 </div>
                                                 <div class="modal-footer">
                                                     <a class="btn btn-primary"
@@ -190,6 +245,8 @@
                                             </div>
                                         </div>
                                     </div>
+
+                                    @endif
                                 @endif
                             </div>
                         </div>
@@ -202,7 +259,11 @@
                         $total_addon_price = 0;
                         $product_price = 0;
                         $store_discount_amount = 0;
-                        $product_price = 0;
+                        
+                        if ($order->prescription_order == 1) {
+                            $product_price = $order['order_amount'] - $order['delivery_charge'] - $order['total_tax_amount'] - $order['dm_tips'] + $order['store_discount_amount'];
+                        }
+                        
                         $total_addon_price = 0;
                         ?>
                         <div class="table-responsive">
@@ -246,18 +307,55 @@
                                                                     {{ $detail['quantity'] }} x
                                                                     {{ \App\CentralLogics\Helpers::format_currency($detail['price']) }}
                                                                 </h6>
-                                                                @if (count(json_decode($detail['variation'], true)) > 0)
-                                                                    <strong><u>{{ translate('messages.variation') }} :
-                                                                        </u></strong>
-                                                                    @foreach (json_decode($detail['variation'], true)[0] as $key1 => $variation)
-                                                                        @if ($key1 != 'stock' || ($order->store && config('module.' . $order->store->module->module_type)['stock']))
-                                                                            <div class="font-size-sm text-body">
-                                                                                <span>{{ $key1 }} : </span>
-                                                                                <span
-                                                                                    class="font-weight-bold">{{ Str::limit($variation, 20, '...') }}</span>
-                                                                            </div>
-                                                                        @endif
-                                                                    @endforeach
+                                                                @if ($order->store && $order->store->module->module_type == 'food')
+                                                                    @if (isset($detail['variation']) ? json_decode($detail['variation'], true) : [])
+                                                                        @foreach (json_decode($detail['variation'], true) as $variation)
+                                                                            @if (isset($variation['name']) && isset($variation['values']))
+                                                                                <span class="d-block text-capitalize">
+                                                                                    <strong>
+                                                                                        {{ $variation['name'] }} -
+                                                                                    </strong>
+                                                                                </span>
+                                                                                @foreach ($variation['values'] as $value)
+                                                                                    <span class="d-block text-capitalize">
+                                                                                        &nbsp; &nbsp;
+                                                                                        {{ $value['label'] }} :
+                                                                                        <strong>{{ \App\CentralLogics\Helpers::format_currency($value['optionPrice']) }}</strong>
+                                                                                    </span>
+                                                                                @endforeach
+                                                                            @else
+                                                                                @if (isset(json_decode($detail['variation'], true)[0]))
+                                                                                    <strong><u>
+                                                                                            {{ translate('messages.Variation') }}
+                                                                                            : </u></strong>
+                                                                                    @foreach (json_decode($detail['variation'], true)[0] as $key1 => $variation)
+                                                                                        <div
+                                                                                            class="font-size-sm text-body">
+                                                                                            <span>{{ $key1 }}
+                                                                                                : </span>
+                                                                                            <span
+                                                                                                class="font-weight-bold">{{ $variation }}</span>
+                                                                                        </div>
+                                                                                    @endforeach
+                                                                                @endif
+                                                                                {{-- @break --}}
+                                                                            @endif
+                                                                        @endforeach
+                                                                    @endif
+                                                                @else
+                                                                    @if (count(json_decode($detail['variation'], true)) > 0)
+                                                                        <strong><u>{{ translate('messages.variation') }} :
+                                                                            </u></strong>
+                                                                        @foreach (json_decode($detail['variation'], true)[0] as $key1 => $variation)
+                                                                            @if ($key1 != 'stock' || ($order->store && config('module.' . $order->store->module->module_type)['stock']))
+                                                                                <div class="font-size-sm text-body">
+                                                                                    <span>{{ $key1 }} : </span>
+                                                                                    <span
+                                                                                        class="font-weight-bold">{{ Str::limit($variation, 20, '...') }}</span>
+                                                                                </div>
+                                                                            @endif
+                                                                        @endforeach
+                                                                    @endif
                                                                 @endif
                                                             </div>
                                                         </div>
@@ -376,15 +474,16 @@
                             <hr>
                         </div>
                         <?php
-
+                        
                         $coupon_discount_amount = $order['coupon_discount_amount'];
-
+                        
                         $total_price = $product_price + $total_addon_price - $store_discount_amount - $coupon_discount_amount;
-
+                        
                         $total_tax_amount = $order['total_tax_amount'];
-
+                        $tax_included = \App\Models\BusinessSetting::where(['key'=>'tax_included'])->first() ?  \App\Models\BusinessSetting::where(['key'=>'tax_included'])->first()->value : 0;
+                        
                         $store_discount_amount = $order['store_discount_amount'];
-
+                        
                         ?>
                         <div class="row justify-content-md-end mb-3 mx-0 mt-4">
                             <div class="col-md-9 col-lg-8">
@@ -403,20 +502,44 @@
                                         </dd>
                                     @endif
 
-                                    <dt class="col-6">{{ translate('messages.subtotal') }}:</dt>
+                                    <dt class="col-6">{{ translate('messages.subtotal') }}
+                                        @if ($order->tax_status == 'included' ||  $tax_included ==  1)
+                                        ({{ translate('messages.TAX_Included') }})
+                                        @endif
+                                        :</dt>
+
                                     <dd class="col-6">
+                                        @if ($order->prescription_order == 1 &&
+                                            ($order['order_status'] == 'pending' ||
+                                                $order['order_status'] == 'confirmed' ||
+                                                $order['order_status'] == 'processing'))
+                                            <button class="btn btn-sm" type="button" data-toggle="modal"
+                                                data-target="#edit-order-amount"><i class="tio-edit"></i></button>
+                                        @endif
                                         {{ \App\CentralLogics\Helpers::format_currency($product_price + $total_addon_price) }}
                                     </dd>
                                     <dt class="col-6">{{ translate('messages.discount') }}:</dt>
                                     <dd class="col-6">
-                                        - {{ \App\CentralLogics\Helpers::format_currency($store_discount_amount) }}</dd>
+                                        @if ($order->prescription_order == 1 &&
+                                            ($order['order_status'] == 'pending' ||
+                                                $order['order_status'] == 'confirmed' ||
+                                                $order['order_status'] == 'processing'))
+                                            <button class="btn btn-sm" type="button" data-toggle="modal"
+                                                data-target="#edit-discount-amount"><i class="tio-edit"></i></button>
+                                        @endif
+                                        - {{ \App\CentralLogics\Helpers::format_currency($store_discount_amount) }}
+                                    </dd>
                                     <dt class="col-6">{{ translate('messages.coupon') }}
                                         {{ translate('messages.discount') }}:</dt>
                                     <dd class="col-6">
                                         - {{ \App\CentralLogics\Helpers::format_currency($coupon_discount_amount) }}</dd>
-                                    <dt class="col-6">{{ translate('messages.vat/tax') }}:</dt>
-                                    <dd class="col-6">
-                                        + {{ \App\CentralLogics\Helpers::format_currency($total_tax_amount) }}</dd>
+                                        @if ($order->tax_status == 'excluded' || $order->tax_status == null  )
+                                        <dt class="col-sm-6">{{ translate('messages.vat/tax') }}:</dt>
+                                        <dd class="col-sm-6">
+                                            +
+                                            {{ \App\CentralLogics\Helpers::format_currency($total_tax_amount) }}
+                                        </dd>
+                                        @endif
                                     <dt class="col-6">{{ translate('messages.delivery_man_tips') }}</dt>
                                     <dd class="col-6">
                                         + {{ \App\CentralLogics\Helpers::format_currency($order->dm_tips) }}</dd>
@@ -445,7 +568,9 @@
 
             <div class="col-lg-4">
                 <!-- Card -->
-                @if ($order->order_status != 'refund_requested' && $order->order_status != 'refunded' && $order->order_status != 'delivered')
+                @if ($order->order_status != 'refund_requested' &&
+                    $order->order_status != 'refunded' &&
+                    $order->order_status != 'delivered')
                     <div class="card mb-2">
                         <!-- Header -->
                         <div class="card-header justify-content-center text-center px-0 mx-4">
@@ -806,6 +931,63 @@
         </div>
     </div>
     <!-- End Modal -->
+
+    <div class="modal fade" id="edit-order-amount" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">{{ translate('messages.update_order_amount') }}</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form action="{{ route('vendor.order.update-order-amount') }}" method="POST" class="row">
+                        @csrf
+                        <input type="hidden" name="order_id" value="{{ $order->id }}">
+                        <div class="form-group col-12">
+                            <label for="">{{ translate('messages.order_amount') }}</label>
+                            <input type="number" class="form-control" name="order_amount" min="0"
+                                value="{{ $order['order_amount'] - $order['total_tax_amount'] - $order['delivery_charge'] + $order['store_discount_amount'] }}" step=".01">
+                        </div>
+
+                        <div class="form-group col-sm-12">
+                            <button class="btn btn-sm btn-primary"
+                                type="submit">{{ translate('messages.submit') }}</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="edit-discount-amount" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">{{ translate('messages.update_discount_amount') }}</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form action="{{ route('vendor.order.update-discount-amount') }}" method="POST" class="row">
+                        @csrf
+                        <input type="hidden" name="order_id" value="{{ $order->id }}">
+                        <div class="form-group col-12">
+                            <label for="">{{ translate('messages.discount_amount') }}</label>
+                            <input type="number" class="form-control" name="discount_amount" min="0"
+                                value="{{ $order['store_discount_amount'] }}" step=".01">
+                        </div>
+
+                        <div class="form-group col-sm-12">
+                            <button class="btn btn-sm btn-primary"
+                                type="submit">{{ translate('messages.submit') }}</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- End Content -->
 

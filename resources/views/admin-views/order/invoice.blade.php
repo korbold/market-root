@@ -32,5 +32,6 @@
             // document.body.innerHTML = originalContents;
             window.open('{{route("admin.order.print-invoice",["id" => $order->id])}}', '_blank');
         }
+        
     </script>
 @endpush

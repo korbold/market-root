@@ -4,7 +4,8 @@
 @else
     @php($zone_name = translate('messages.all'))
 @endif
-<label class="badge badge-soft-info">{{translate('messages.zone')}} : {{$zone_name}}</label>
+{{--<label class="badge badge-soft-info">{{translate('messages.zone')}} : {{$zone_name}}</label>
+--}}
 
 <div class="chartjs-custom mx-auto">
     <canvas id="business-overview" class="mt-2"></canvas>

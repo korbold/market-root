@@ -452,6 +452,7 @@
                     </li>
                     @endif
                     <!-- End Business Settings -->
+                    @if(\App\CentralLogics\Helpers::employee_module_permission_check('chat'))
                     <li class="navbar-vertical-aside-has-menu {{Request::is('store-panel/message*')?'active':''}}">
                         <a class="js-navbar-vertical-aside-menu-link nav-link"
                             href="{{route('vendor.message.list')}}" title="{{translate('messages.chat')}}"
@@ -462,6 +463,7 @@
                             </span>
                         </a>
                     </li>
+                    @endif
 
                     <!-- Employee-->
                     <li class="nav-item">

@@ -30,7 +30,7 @@
                     </div>
                     <!-- End Search -->
                 </form>
-                <div class="min--200 ml-auto">
+                {{-- <div class="min--200 ml-auto">
                     <select name="module_id" class="form-control js-select2-custom" onchange="set_filter('{{url()->full()}}',this.value,'module_id')" title="{{translate('messages.select')}} {{translate('messages.modules')}}">
                         <option value="" {{!request('module_id') ? 'selected':''}}>{{translate('messages.all')}} {{translate('messages.modules')}}</option>
                         @foreach (\App\Models\Module::notParcel()->get() as $module)
@@ -42,7 +42,7 @@
 
                         @endforeach
                     </select>
-                </div>
+                </div> --}}
                 <div class="min--200">
                     <select name="zone_id" class="form-control js-select2-custom" onchange="set_zone_filter('{{url()->full()}}',this.value)" id="zone">
                         <option value="all">{{translate('All Zones')}}</option>
@@ -90,13 +90,13 @@
                         <div class="dropdown-divider"></div> --}}
                         <span class="dropdown-header">{{ translate('messages.download') }}
                             {{ translate('messages.options') }}</span>
-                        <a id="export-excel" class="dropdown-item" href="{{route('admin.report.stock-wise-report-export', ['type'=>'excel',request()->getQueryString()])}}">
+                        <a id="export-excel" class="dropdown-item" href="{{route('admin.transactions.report.stock-wise-report-export', ['type'=>'excel',request()->getQueryString()])}}">
                             <img class="avatar avatar-xss avatar-4by3 mr-2"
                                 src="{{ asset('public/assets/admin') }}/svg/components/excel.svg"
                                 alt="Image Description">
                             {{ translate('messages.excel') }}
                         </a>
-                        <a id="export-csv" class="dropdown-item" href="{{route('admin.report.stock-wise-report-export', ['type'=>'csv',request()->getQueryString()])}}">
+                        <a id="export-csv" class="dropdown-item" href="{{route('admin.transactions.report.stock-wise-report-export', ['type'=>'csv',request()->getQueryString()])}}">
                             <img class="avatar avatar-xss avatar-4by3 mr-2"
                                 src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                 alt="Image Description">
@@ -152,7 +152,7 @@
                     <tr>
                         <td>{{$key+$items->firstItem()}}</td>
                         <td>
-                            <a class="media align-items-center" href="{{route('admin.item.view',[$item['id']])}}">
+                            <a class="media align-items-center" href="{{route('admin.item.view',[$item['id'],'module_id'=>$item['module_id']])}}">
                                 <img class="avatar avatar-lg mr-3" src="{{asset('storage/app/public/product')}}/{{$item['image']}}" onerror="this.src='{{asset('public/assets/admin/img/160x160/img2.jpg')}}'" alt="{{$item->name}} image">
                                 <div class="media-body">
                                     <h5 class="text-hover-primary mb-0 max-width-200px word-break line--limit-2">{{$item['name']}}</h5>
@@ -312,7 +312,7 @@
                 }
             });
             $.post({
-                url: '{{route('admin.report.stock-search')}}',
+                url: '{{route('admin.transactions.report.stock-search')}}',
                 data: formData,
                 cache: false,
                 contentType: false,

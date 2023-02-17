@@ -10,22 +10,19 @@ use App\CentralLogics\Helpers;
 use Rap2hpoutre\FastExcel\FastExcel;
 use Illuminate\Support\Facades\DB;
 use App\Models\Translation;
+use Illuminate\Support\Facades\Config;
 
 class CategoryController extends Controller
 {
     function index(Request $request)
     {
-        $categories=Category::with('module')->where(['position'=>0])
-        ->when($request->query('module_id', null), function($query)use($request){
-            return $query->module($request->query('module_id'));
-        })
-        ->latest()->paginate(config('default_pagination'));
+        $categories=Category::with('module')->where(['position'=>0])->module(Config::get('module.current_module_id'))->latest()->paginate(config('default_pagination'));
         return view('admin-views.category.index',compact('categories'));
     }
 
     function sub_index()
     {
-        $categories=Category::with(['parent'])->where(['position'=>1])->latest()->paginate(config('default_pagination'));
+        $categories=Category::with(['parent'])->where(['position'=>1])->module(Config::get('module.current_module_id'))->latest()->paginate(config('default_pagination'));
         return view('admin-views.category.sub-index',compact('categories'));
     }
 
@@ -57,7 +54,7 @@ class CategoryController extends Controller
         $category->image = Helpers::upload('category/', 'png', $request->file('image'));
         $category->parent_id = $request->parent_id == null ? 0 : $request->parent_id;
         $category->position = $request->position;
-        $category->module_id = isset($request->parent_id)?Category::where('id', $request->parent_id)->first('module_id')->module_id:$request->module_id;
+        $category->module_id = isset($request->parent_id)?Category::where('id', $request->parent_id)->first('module_id')->module_id:Config::get('module.current_module_id');
         $category->save();
 
         $data = [];
@@ -138,7 +135,11 @@ class CategoryController extends Controller
     }
 
     public function get_all(Request $request){
-        $data = Category::where('name', 'like', '%'.$request->q.'%')->limit(8)->get([DB::raw('id, CONCAT(name, " (", if(position = 0, "'.translate('messages.main').'", "'.translate('messages.sub').'"),")") as text')]);
+        $data = Category::where('name', 'like', '%'.$request->q.'%')
+        ->when($request->module_id, function($query)use($request){
+            $query->where('module_id', $request->module_id);
+        })
+        ->limit(8)->get([DB::raw('id, CONCAT(name, " (", if(position = 0, "'.translate('messages.main').'", "'.translate('messages.sub').'"),")") as text')]);
         if(isset($request->all))
         {
             $data[]=(object)['id'=>'all', 'text'=>'All'];
@@ -214,17 +215,16 @@ class CategoryController extends Controller
         })
         ->when($request['type']=='id_wise', function($query)use($request){
             $query->whereBetween('id', [$request['start_id'], $request['end_id']]);
-        })
+        })->module(Config::get('module.current_module_id'))
         ->get();
         return (new FastExcel($categories))->download('Categories.xlsx');
     }
 
     public function search(Request $request){
         $key = explode(' ', $request['search']);
-        $categories=Category::
-        when($request->sub_category, function($query){
+        $categories=Category::when($request->sub_category, function($query){
             return $query->where('position','1');
-        })
+        })->module(Config::get('module.current_module_id'))
         ->where(function ($q) use ($key) {
             foreach ($key as $value) {
                 $q->orWhere('name', 'like', "%{$value}%");
@@ -245,10 +245,7 @@ class CategoryController extends Controller
     }
 
     public function export_categories(Request $request, $type){
-        $collection = Category::with('module')->where(['position'=>0])
-        ->when($request->query('module_id', null), function($query)use($request){
-            return $query->module($request->query('module_id'));
-        })
+        $collection = Category::with('module')->where(['position'=>0])->module(Config::get('module.current_module_id'))
         ->latest()->get();
 
         if($type == 'excel'){

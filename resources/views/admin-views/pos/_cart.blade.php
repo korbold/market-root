@@ -16,6 +16,7 @@
                 $discount = 0;
                 $discount_type = 'amount';
                 $discount_on_product = 0;
+                $variation_price  = 0;
             ?>
             @if(session()->has('cart') && count( session()->get('cart')) > 0)
                 <?php
@@ -33,6 +34,7 @@
                 @foreach(session()->get('cart') as $key => $cartItem)
                 @if(is_array($cartItem))
                     <?php
+                    $variation_price += isset($cartItem['variation_price'])?$cartItem['variation_price']:0;
                     $product_subtotal = ($cartItem['price'])*$cartItem['quantity'];
                     $discount_on_product += ($cartItem['discount']*$cartItem['quantity']);
                     $subtotal += $product_subtotal;
@@ -75,6 +77,7 @@
         $total = $subtotal+$addon_price;
         $discount_amount = ($discount_type=='percent' && $discount>0)?((($total-$discount_on_product) * $discount)/100):$discount;
         $total -= ($discount_amount + $discount_on_product);
+        $tax_included = \App\Models\BusinessSetting::where(['key'=>'tax_included'])->first() ?  \App\Models\BusinessSetting::where(['key'=>'tax_included'])->first()->value : 0;
         $total_tax_amount= ($tax > 0)?(($total * $tax)/100):0;
         $total = $total + $delivery_fee;
     ?>
@@ -84,7 +87,12 @@
             <dt  class="col-sm-6">{{translate('messages.addon')}}:</dt>
             <dd class="col-sm-6 text-right">{{\App\CentralLogics\Helpers::format_currency($addon_price)}}</dd>
 
-            <dt  class="col-sm-6">{{translate('messages.subtotal')}}:</dt>
+            <dt  class="col-sm-6">{{translate('messages.subtotal')}}
+                @if ($tax_included ==  1)
+                ({{ translate('messages.TAX_Included') }})
+                @php($total_tax_amount=0)
+                @endif
+                :</dt>
             <dd class="col-sm-6 text-right">{{\App\CentralLogics\Helpers::format_currency($subtotal+$addon_price)}}</dd>
 
 
@@ -93,14 +101,13 @@
             <dt class="col-6">{{ translate('messages.delivery_fee') }} :</dt>
             <dd class="col-6 text-right" id="delivery_price">
                 {{ \App\CentralLogics\Helpers::format_currency($delivery_fee, 2) }}</dd>
-            {{-- <dt  class="col-sm-6">{{translate('messages.extra_discount')}} :</dt>
-            <dd class="col-sm-6 text-right"><button class="btn btn-sm" type="button" data-toggle="modal" data-target="#add-discount"><i class="tio-edit"></i></button>- {{\App\CentralLogics\Helpers::format_currency(round($discount_amount,2))}}</dd> --}}
+                @if ($tax_included !=  1)
 
             <dt  class="col-sm-6">{{ translate('messages.tax') }}  : </dt>
             <dd class="col-sm-6 text-right">
                 {{-- <button class="btn btn-sm" type="button" data-toggle="modal" data-target="#add-tax"><i class="tio-edit"></i></button> --}}
                 {{\App\CentralLogics\Helpers::format_currency(round($total_tax_amount,2))}}</dd>
-
+@endif
             <dt  class="col-6 pr-0">
                 <hr class="mt-0">
             </dt>

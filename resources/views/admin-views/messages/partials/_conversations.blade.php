@@ -11,7 +11,7 @@
             <div class="chat-user-info-content">
                 <h5 class="mb-0 text-capitalize">
                     {{$user['f_name'].' '.$user['l_name']}}</h5>
-                <span>{{ $user['phone'] }}</span>
+                <span dir="ltr">{{ $user['phone'] }}</span>
             </div>
         </div>
     </div>

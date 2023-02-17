@@ -213,7 +213,7 @@ class DeliverymanController extends Controller
 
         $fcm_token=$order->customer->cm_firebase_token;
 
-        $value = Helpers::order_status_update_message('accepted');
+        $value = Helpers::order_status_update_message('accepted',$order->module->module_type);
         try {
             if($value)
             {
@@ -406,8 +406,20 @@ class DeliverymanController extends Controller
                 ]
             ], 404);
         }
-        $details = Helpers::order_details_data_formatting($order->details);
-        return response()->json($details, 200);
+        $details = isset($order->details)?$order->details:null;
+        if ($details != null && $details->count() > 0) {
+            $details = $details = Helpers::order_details_data_formatting($details);
+            return response()->json($details, 200);
+        } else if ($order->order_type == 'parcel' || $order->prescription_order == 1) {
+            $order->delivery_address = json_decode($order->delivery_address, true);
+            return response()->json(($order), 200);
+        }
+
+        return response()->json([
+            'errors' => [
+                ['code' => 'order', 'message' => translate('messages.not_found')]
+            ]
+        ], 404);
     }
 
     public function get_order(Request $request)

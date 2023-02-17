@@ -69,7 +69,7 @@ class CustomRoleController extends Controller
         ]);
 
         Toastr::success(translate('messages.role_updated_successfully'));
-        return redirect()->route('admin.custom-role.create');
+        return redirect()->route('admin.users.custom-role.create');
     }
     public function distroy($id)
     {

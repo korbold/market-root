@@ -2,19 +2,20 @@
 
 namespace App\Http\Controllers\Vendor;
 
-use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Http\Request;
-use App\Models\Category;
+use App\Models\Tag;
 use App\Models\Item;
 use App\Models\Review;
-use Brian2694\Toastr\Facades\Toastr;
-use Illuminate\Support\Facades\Storage;
-use App\CentralLogics\Helpers;
-use App\CentralLogics\ProductLogic;
-use Rap2hpoutre\FastExcel\FastExcel;
-use Illuminate\Support\Facades\DB;
+use App\Models\Category;
 use App\Models\Translation;
+use Illuminate\Http\Request;
+use App\CentralLogics\Helpers;
+use Illuminate\Support\Facades\DB;
+use App\CentralLogics\ProductLogic;
+use App\Http\Controllers\Controller;
+use Brian2694\Toastr\Facades\Toastr;
+use Rap2hpoutre\FastExcel\FastExcel;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 
 class ItemController extends Controller
 {
@@ -68,6 +69,20 @@ class ItemController extends Controller
 
         if ($request['price'] <= $dis || $validator->fails()) {
             return response()->json(['errors' => Helpers::error_processor($validator)]);
+        }
+
+        $tag_ids = [];
+        if ($request->tags != null) {
+            $tags = explode(",", $request->tags);
+        }
+        if(isset($tags)){
+            foreach ($tags as $key => $value) {
+                $tag = Tag::firstOrNew(
+                    ['tag' => $value]
+                );
+                $tag->save();
+                array_push($tag_ids,$tag->id);
+            }
         }
 
         $food = new Item;
@@ -151,6 +166,44 @@ class ItemController extends Controller
             $images = $img_names;
         }
 
+        // food variation
+        $food_variations = [];
+        if (isset($request->options)) {
+            foreach (array_values($request->options) as $key => $option) {
+
+                $temp_variation['name'] = $option['name'];
+                $temp_variation['type'] = $option['type'];
+                $temp_variation['min'] = $option['min'] ?? 0;
+                $temp_variation['max'] = $option['max'] ?? 0;
+                $temp_variation['required'] = $option['required'] ?? 'off';
+                if ($option['min'] > 0 &&  $option['min'] > $option['max']) {
+                    $validator->getMessageBag()->add('name', translate('messages.minimum_value_can_not_be_greater_then_maximum_value'));
+                    return response()->json(['errors' => Helpers::error_processor($validator)]);
+                }
+                if (!isset($option['values'])) {
+                    $validator->getMessageBag()->add('name', translate('messages.please_add_options_for') . $option['name']);
+                    return response()->json(['errors' => Helpers::error_processor($validator)]);
+                }
+                if ($option['max'] > count($option['values'])) {
+                    $validator->getMessageBag()->add('name', translate('messages.please_add_more_options_or_change_the_max_value_for') . $option['name']);
+                    return response()->json(['errors' => Helpers::error_processor($validator)]);
+                }
+                $temp_value = [];
+
+                foreach (array_values($option['values']) as $value) {
+                    if (isset($value['label'])) {
+                        $temp_option['label'] = $value['label'];
+                    }
+                    $temp_option['optionPrice'] = $value['optionPrice'];
+                    array_push($temp_value, $temp_option);
+                }
+                $temp_variation['values'] = $temp_value;
+                array_push($food_variations, $temp_variation);
+            }
+        }
+
+        $food->food_variations = json_encode($food_variations);
+
         $food->variations = json_encode($variations);
         $food->price = $request->price;
         $food->veg = $request->veg??0;
@@ -166,6 +219,7 @@ class ItemController extends Controller
         $food->images = $images;
         $food->stock = $request->current_stock??0;
         $food->save();
+        $food->tags()->sync($tag_ids);
 
         $data = [];
         foreach ($request->lang as $index => $key) {
@@ -270,6 +324,20 @@ class ItemController extends Controller
             return response()->json(['errors' => Helpers::error_processor($validator)]);
         }
 
+        $tag_ids = [];
+        if ($request->tags != null) {
+            $tags = explode(",", $request->tags);
+        }
+        if(isset($tags)){
+            foreach ($tags as $key => $value) {
+                $tag = Tag::firstOrNew(
+                    ['tag' => $value]
+                );
+                $tag->save();
+                array_push($tag_ids,$tag->id);
+            }
+        }
+
         $p = Item::find($id);
 
         $p->name = $request->name[array_search('en', $request->lang)];
@@ -350,6 +418,41 @@ class ItemController extends Controller
                 array_push($images, $image);
             }
         } 
+
+        $food_variations = [];
+        if (isset($request->options)) {
+            foreach (array_values($request->options) as $key => $option) {
+                $temp_variation['name'] = $option['name'];
+                $temp_variation['type'] = $option['type'];
+                $temp_variation['min'] = $option['min'] ?? 0;
+                $temp_variation['max'] = $option['max'] ?? 0;
+                if ($option['min'] > 0 &&  $option['min'] > $option['max']) {
+                    $validator->getMessageBag()->add('name', translate('messages.minimum_value_can_not_be_greater_then_maximum_value'));
+                    return response()->json(['errors' => Helpers::error_processor($validator)]);
+                }
+                if (!isset($option['values'])) {
+                    $validator->getMessageBag()->add('name', translate('messages.please_add_options_for') . $option['name']);
+                    return response()->json(['errors' => Helpers::error_processor($validator)]);
+                }
+                if ($option['max'] > count($option['values'])) {
+                    $validator->getMessageBag()->add('name', translate('messages.please_add_more_options_or_change_the_max_value_for') . $option['name']);
+                    return response()->json(['errors' => Helpers::error_processor($validator)]);
+                }
+                $temp_variation['required'] = $option['required'] ?? 'off';
+                $temp_value = [];
+                foreach (array_values($option['values']) as $value) {
+                    if (isset($value['label'])) {
+                        $temp_option['label'] = $value['label'];
+                    }
+                    $temp_option['optionPrice'] = $value['optionPrice'];
+                    array_push($temp_value, $temp_option);
+                }
+                $temp_variation['values'] = $temp_value;
+                array_push($food_variations, $temp_variation);
+            }
+        }
+
+        $p->food_variations = json_encode($food_variations);
         $p->variations = json_encode($variations);
         $p->price = $request->price;
         $p->veg = $request->veg??0;
@@ -363,6 +466,7 @@ class ItemController extends Controller
         $p->images = $images;
         $p->stock = $request->current_stock??0;
         $p->save();
+        $p->tags()->sync($tag_ids);
 
         foreach ($request->lang as $index => $key) {
             if ($request->name[$index] && $key != 'en') {

@@ -22,7 +22,7 @@
         <!-- Page Header -->
         <div class="card gx-2 gx-lg-3">
             <div class="card-body">
-                <form action="{{route('admin.customer.wallet.add-fund')}}" method="post" enctype="multipart/form-data" id="add_fund">
+                <form action="{{route('admin.users.customer.wallet.add-fund')}}" method="post" enctype="multipart/form-data" id="add_fund">
                     @csrf
                     <div class="row">
                         <div class="col-sm-6 col-12">
@@ -116,7 +116,7 @@
                         }
                     });
                     $.post({
-                        url: '{{route('admin.customer.wallet.add-fund')}}',
+                        url: '{{route('admin.users.customer.wallet.add-fund')}}',
                         data: formData,
                         cache: false,
                         contentType: false,
@@ -151,7 +151,7 @@
 
         $('.js-data-example-ajax').select2({
             ajax: {
-                url: '{{route('admin.customer.select-list')}}',
+                url: '{{route('admin.users.customer.select-list')}}',
                 data: function (params) {
                     return {
                         q: params.term, // search term

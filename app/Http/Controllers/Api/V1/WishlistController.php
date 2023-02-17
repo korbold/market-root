@@ -85,6 +85,8 @@ class WishlistController extends Controller
                     $query->where('module_id', config('module.current_module_data')['id'])->whereHas('zone.modules',function($query){
                         $query->where('modules.id', config('module.current_module_data')['id']);
                     });
+                })->whereHas('module',function($query){
+                    $query->where('status',1);
                 })->whereIn('zone_id', json_decode($zone_id, true));
             });
         }, 'store'=>function($q)use($zone_id,$longitude,$latitude){
@@ -92,7 +94,9 @@ class WishlistController extends Controller
                 $query->whereHas('zone.modules', function($query){
                     $query->where('modules.id', config('module.current_module_data')['id']);
                 })->module(config('module.current_module_data')['id']);
-            })->withOpen($longitude,$latitude)->whereIn('zone_id', json_decode($zone_id, true));
+            })->withOpen($longitude,$latitude)->whereHas('module',function($query){
+                $query->where('status',1);
+            })->whereIn('zone_id', json_decode($zone_id, true));
         }])->get();
         $wishlists = Helpers::wishlist_data_formatting($wishlists, true);
         return response()->json($wishlists, 200);

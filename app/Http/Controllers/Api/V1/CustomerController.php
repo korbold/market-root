@@ -165,6 +165,21 @@ class CustomerController extends Controller
 
     public function info(Request $request)
     {
+        if (!$request->hasHeader('X-localization')) {
+
+            $errors = [];
+            array_push($errors, ['code' => 'current_language_key', 'message' => translate('messages.current_language_key_required')]);
+            return response()->json([
+                'errors' => $errors
+            ], 200);
+        }
+
+    // Current Language
+    $current_language = $request->header('X-localization');
+    $user = User::findOrFail($request->user()->id);
+    $user->current_language_key = $current_language;
+    $user->save();
+    
         $data = $request->user();
         $data['userinfo'] = $data->userinfo;
         $data['order_count'] =(integer)$request->user()->orders->count();

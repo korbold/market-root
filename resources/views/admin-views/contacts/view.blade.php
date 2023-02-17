@@ -28,7 +28,7 @@
                                 <i class="tio-user-big"></i>
                                  {{translate('messages.User_details')}}
                             </h5>
-                            <form action="{{route('admin.contact.contact-update',$contact->id)}}" method="post">
+                            <form action="{{route('admin.users.contact.contact-update',$contact->id)}}" method="post">
                                 @csrf
                                 <div class="form-group d-none">
                                     <div class="row">
@@ -128,7 +128,7 @@
                                     </center>
 
 
-                                    <form action="{{route('admin.contact.contact-send-mail',$contact->id)}}" method="post">
+                                    <form action="{{route('admin.users.contact.contact-send-mail',$contact->id)}}" method="post">
                                         @csrf
                                         <div class="form-group mt-2">
                                             <div class="row">

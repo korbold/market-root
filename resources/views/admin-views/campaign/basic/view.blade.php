@@ -30,7 +30,7 @@
                             <!-- Search -->
                             <div class="d-flex flex-wrap g-2">
                                 <div class="flex-grow-1">
-                                @php($allstores=App\Models\Store::where('module_id', $campaign->module_id)->get())
+                                @php($allstores=App\Models\Store::Active()->where('module_id', $campaign->module_id)->get())
                                     <select name="store_id" id="store_id" class="form-control">
                                         @forelse($allstores as $store)
                                         @if(!in_array($store->id, $store_ids))

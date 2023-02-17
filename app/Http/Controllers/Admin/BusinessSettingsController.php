@@ -8,15 +8,61 @@ use App\CentralLogics\Helpers;
 use App\Models\BusinessSetting;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
+use App\Models\NotificationMessage;
+use App\Models\Translation;
 use Brian2694\Toastr\Facades\Toastr;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Validator;
 
 class BusinessSettingsController extends Controller
 {
-    public function business_index()
+    public function business_index($tab='business')
     {
-        return view('admin-views.business-settings.business-index');
+        if(!Helpers::module_permission_check('settings')){
+            Toastr::error(translate('messages.access_denied'));
+            return back();
+        }
+        if($tab == 'business')
+        {
+            return view('admin-views.business-settings.business-index');
+        }else if($tab == 'customer')
+        {
+            $data = BusinessSetting::where('key','like','wallet_%')
+            ->orWhere('key','like','loyalty_%')
+            ->orWhere('key','like','ref_earning_%')
+            ->orWhere('key','like','ref_earning_%')->get();
+            $data = array_column($data->toArray(), 'value','key');
+            return view('admin-views.business-settings.customer-index', compact('data'));
+        }else if($tab == 'deliveryman')
+        {
+            return view('admin-views.business-settings.deliveryman-index');
+        }
+    }
+
+    public function update_dm(Request $request)
+    {
+        if (env('APP_MODE') == 'demo') {
+            Toastr::info(translate('messages.update_option_is_disable_for_demo'));
+            return back();
+        }
+        DB::table('business_settings')->updateOrInsert(['key' => 'dm_tips_status'], [
+            'value' => $request['dm_tips_status']
+        ]);
+
+        DB::table('business_settings')->updateOrInsert(['key' => 'dm_maximum_orders'], [
+            'value' => $request['dm_maximum_orders']
+        ]);
+
+        DB::table('business_settings')->updateOrInsert(['key' => 'canceled_by_deliveryman'], [
+            'value' => $request['canceled_by_deliveryman']
+        ]);
+
+        DB::table('business_settings')->updateOrInsert(['key' => 'show_dm_earning'], [
+            'value' => $request['show_dm_earning']
+        ]);
+        Toastr::success(translate('messages.successfully_updated_to_changes_restart_app'));
+        return back();
     }
 
     public function business_setup(Request $request)
@@ -57,6 +103,20 @@ class BusinessSettingsController extends Controller
             $image_name = $fav_icon['value'];
         }
 
+        if(session()->has('currency_symbol')){
+            session()->forget('currency_symbol');
+        }
+        if(session()->has('currency_code')){
+            session()->forget('currency_code');
+        }
+        if(session()->has('currency_symbol_position')){
+            session()->forget('currency_symbol_position');
+        }
+
+        DB::table('business_settings')->updateOrInsert(['key' => 'site_direction'], [
+            'value' => $request['site_direction']
+        ]);
+        
         DB::table('business_settings')->updateOrInsert(['key' => 'icon'], [
             'value' => $image_name
         ]);
@@ -99,13 +159,11 @@ class BusinessSettingsController extends Controller
         DB::table('business_settings')->updateOrInsert(['key' => 'schedule_order'], [
             'value' => $request['schedule_order']
         ]);
-
+        DB::table('business_settings')->updateOrInsert(['key' => 'tax_included'], [
+            'value' => $request['tax_included']
+        ]);
         DB::table('business_settings')->updateOrInsert(['key' => 'order_confirmation_model'], [
             'value' => $request['order_confirmation_model']
-        ]);
-
-        DB::table('business_settings')->updateOrInsert(['key' => 'dm_tips_status'], [
-            'value' => $request['dm_tips_status']
         ]);
 
         DB::table('business_settings')->updateOrInsert(['key' => 'tax'], [
@@ -136,21 +194,16 @@ class BusinessSettingsController extends Controller
             'value' => $request['free_delivery_over_status'] ? $request['free_delivery_over'] : null
         ]);
 
+        // $languages = $request['language'];
 
-        DB::table('business_settings')->updateOrInsert(['key' => 'dm_maximum_orders'], [
-            'value' => $request['dm_maximum_orders']
-        ]);
+        // if (in_array('en', $languages)) {
+        //     unset($languages[array_search('en', $languages)]);
+        // }
+        // array_unshift($languages, 'en');
 
-        $languages = $request['language'];
-
-        if (in_array('en', $languages)) {
-            unset($languages[array_search('en', $languages)]);
-        }
-        array_unshift($languages, 'en');
-
-        DB::table('business_settings')->updateOrInsert(['key' => 'language'], [
-            'value' => json_encode($languages),
-        ]);
+        // DB::table('business_settings')->updateOrInsert(['key' => 'language'], [
+        //     'value' => json_encode($languages),
+        // ]);
 
         DB::table('business_settings')->updateOrInsert(['key' => 'timeformat'], [
             'value' => $request['time_format']
@@ -160,20 +213,16 @@ class BusinessSettingsController extends Controller
             'value' => $request['canceled_by_store']
         ]);
 
-        DB::table('business_settings')->updateOrInsert(['key' => 'canceled_by_deliveryman'], [
-            'value' => $request['canceled_by_deliveryman']
-        ]);
-
-        DB::table('business_settings')->updateOrInsert(['key' => 'show_dm_earning'], [
-            'value' => $request['show_dm_earning']
-        ]);
-
         DB::table('business_settings')->updateOrInsert(['key' => 'toggle_veg_non_veg'], [
             'value' => $request['vnv']
         ]);
 
         DB::table('business_settings')->updateOrInsert(['key' => 'toggle_dm_registration'], [
             'value' => $request['dm_self_registration']
+        ]);
+
+        DB::table('business_settings')->updateOrInsert(['key' => 'prescription_order_status'], [
+            'value' => $request['prescription_order_status']
         ]);
 
         DB::table('business_settings')->updateOrInsert(['key' => 'toggle_store_registration'], [
@@ -260,27 +309,7 @@ class BusinessSettingsController extends Controller
             Toastr::info(translate('messages.update_option_is_disable_for_demo'));
             return back();
         }
-        if ($name == 'transfer_payment') {
-            $payment = BusinessSetting::where('key', 'transfer_payment')->first();
-            if (isset($payment) == false) {
-                DB::table('business_settings')->insert([
-                    'key'        => 'transfer_payment',
-                    'value'      => json_encode([
-                        'status' => $request['status'],
-                    ]),
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            } else {
-                DB::table('business_settings')->where(['key' => 'transfer_payment'])->update([
-                    'key'        => 'transfer_payment',
-                    'value'      => json_encode([
-                        'status' => $request['status'],
-                    ]),
-                    'updated_at' => now(),
-                ]);
-            }
-        } else if ($name == 'cash_on_delivery') {
+        if ($name == 'cash_on_delivery') {
             $payment = BusinessSetting::where('key', 'cash_on_delivery')->first();
             if (isset($payment) == false) {
                 DB::table('business_settings')->insert([
@@ -1222,87 +1251,279 @@ class BusinessSettingsController extends Controller
 
     public function update_fcm_messages(Request $request)
     {
-        DB::table('business_settings')->updateOrInsert(['key' => 'order_pending_message'], [
-            'value' => json_encode([
-                'status' => $request['pending_status'] == 1 ? 1 : 0,
-                'message' => $request['pending_message']
-            ])
-        ]);
+        $notification = NotificationMessage::where('module_type',$request->module_type)->where('key','order_pending_message')->first();
+        if($notification == null){
+            $notification = new NotificationMessage();
+        }
 
-        DB::table('business_settings')->updateOrInsert(['key' => 'order_confirmation_msg'], [
-            'value' => json_encode([
-                'status' => $request['confirm_status'] == 1 ? 1 : 0,
-                'message' => $request['confirm_message']
-            ])
-        ]);
+        $notification->key = 'order_pending_message';
+        $notification->module_type = $request->module_type;
+        $notification->message = $request->pending_message[array_search('en', $request->lang)];
+        $notification->status = $request['pending_status'] == 1 ? 1 : 0;
+        $notification->save();
+        foreach($request->lang as $index=>$key)
+        {
+            if($request->pending_message[$index] && $key != 'en')
+            {
+                Translation::updateOrInsert(
+                    ['translationable_type'  => 'App\Models\NotificationMessage',
+                        'translationable_id'    => $notification->id,
+                        'locale'                => $key,
+                        'key'                   => $notification->key],
+                    ['value'                 => $request->pending_message[$index]]
+                );
+            }
+        }
 
-        DB::table('business_settings')->updateOrInsert(['key' => 'order_processing_message'], [
-            'value' => json_encode([
-                'status' => $request['processing_status'] == 1 ? 1 : 0,
-                'message' => $request['processing_message']
-            ])
-        ]);
+        $notification = NotificationMessage::where('module_type',$request->module_type)->where('key','order_confirmation_msg')->first();
+        if($notification == null){
+            $notification = new NotificationMessage();
+        }
 
-        DB::table('business_settings')->updateOrInsert(['key' => 'out_for_delivery_message'], [
-            'value' => json_encode([
-                'status' => $request['out_for_delivery_status'] == 1 ? 1 : 0,
-                'message' => $request['out_for_delivery_message']
-            ])
-        ]);
+        $notification->key = 'order_confirmation_msg';
+        $notification->module_type = $request->module_type;
+        $notification->message = $request->confirm_message[array_search('en', $request->lang)];
+        $notification->status = $request['confirm_status'] == 1 ? 1 : 0;
+        $notification->save();
+        foreach($request->lang as $index=>$key)
+        {
+            if($request->confirm_message[$index] && $key != 'en')
+            {
+                Translation::updateOrInsert(
+                    ['translationable_type'  => 'App\Models\NotificationMessage',
+                        'translationable_id'    => $notification->id,
+                        'locale'                => $key,
+                        'key'                   => $notification->key],
+                    ['value'                 => $request->confirm_message[$index]]
+                );
+            }
+        }
+        if($request->module_type != 'parcel'){
 
-        DB::table('business_settings')->updateOrInsert(['key' => 'order_delivered_message'], [
-            'value' => json_encode([
-                'status' => $request['delivered_status'] == 1 ? 1 : 0,
-                'message' => $request['delivered_message']
-            ])
-        ]);
+        
+            $notification = NotificationMessage::where('module_type',$request->module_type)->where('key','order_processing_message')->first();
+            if($notification == null){
+                $notification = new NotificationMessage();
+            }
+    
+            $notification->key = 'order_processing_message';
+            $notification->module_type = $request->module_type;
+            $notification->message = $request->processing_message[array_search('en', $request->lang)];
+            $notification->status = $request['processing_status'] == 1 ? 1 : 0;
+            $notification->save();
+            foreach($request->lang as $index=>$key)
+            {
+                if($request->processing_message[$index] && $key != 'en')
+                {
+                    Translation::updateOrInsert(
+                        ['translationable_type'  => 'App\Models\NotificationMessage',
+                            'translationable_id'    => $notification->id,
+                            'locale'                => $key,
+                            'key'                   => $notification->key],
+                        ['value'                 => $request->processing_message[$index]]
+                    );
+                }
+            }
 
-        DB::table('business_settings')->updateOrInsert(['key' => 'delivery_boy_assign_message'], [
-            'value' => json_encode([
-                'status' => $request['delivery_boy_assign_status'] == 1 ? 1 : 0,
-                'message' => $request['delivery_boy_assign_message']
-            ])
-        ]);
+            $notification = NotificationMessage::where('module_type',$request->module_type)->where('key','order_handover_message')->first();
+            if($notification == null){
+                $notification = new NotificationMessage();
+            }
 
-        DB::table('business_settings')->updateOrInsert(['key' => 'delivery_boy_delivered_message'], [
-            'value' => json_encode([
-                'status' => $request['delivery_boy_delivered_status'] == 1 ? 1 : 0,
-                'message' => $request['delivery_boy_delivered_message']
-            ])
-        ]);
+            $notification->key = 'order_handover_message';
+            $notification->module_type = $request->module_type;
+            $notification->message = $request->order_handover_message[array_search('en', $request->lang)];
+            $notification->status = $request['order_handover_message_status'] == 1 ? 1 : 0;
+            $notification->save();
+            foreach($request->lang as $index=>$key)
+            {
+                if($request->order_handover_message[$index] && $key != 'en')
+                {
+                    Translation::updateOrInsert(
+                        ['translationable_type'  => 'App\Models\NotificationMessage',
+                            'translationable_id'    => $notification->id,
+                            'locale'                => $key,
+                            'key'                   => $notification->key],
+                        ['value'                 => $request->order_handover_message[$index]]
+                    );
+                }
+            }
 
-        DB::table('business_settings')->updateOrInsert(['key' => 'order_handover_message'], [
-            'value' => json_encode([
-                'status' => $request['order_handover_message_status'] == 1 ? 1 : 0,
-                'message' => $request['order_handover_message']
-            ])
-        ]);
+            $notification = NotificationMessage::where('module_type',$request->module_type)->where('key','order_refunded_message')->first();
+            if($notification == null){
+                $notification = new NotificationMessage();
+            }
 
-        DB::table('business_settings')->updateOrInsert(['key' => 'order_cancled_message'], [
-            'value' => json_encode([
-                'status' => $request['order_cancled_message_status'] == 1 ? 1 : 0,
-                'message' => $request['order_cancled_message']
-            ])
-        ]);
+            $notification->key = 'order_refunded_message';
+            $notification->module_type = $request->module_type;
+            $notification->message = $request->order_refunded_message[array_search('en', $request->lang)];
+            $notification->status = $request['order_refunded_message_status'] == 1 ? 1 : 0;
+            $notification->save();
+            foreach($request->lang as $index=>$key)
+            {
+                if($request->order_refunded_message[$index] && $key != 'en')
+                {
+                    Translation::updateOrInsert(
+                        ['translationable_type'  => 'App\Models\NotificationMessage',
+                            'translationable_id'    => $notification->id,
+                            'locale'                => $key,
+                            'key'                   => $notification->key],
+                        ['value'                 => $request->order_refunded_message[$index]]
+                    );
+                }
+            }
+            
+            $notification = NotificationMessage::where('module_type',$request->module_type)->where('key','refund_request_canceled')->first();
 
-        DB::table('business_settings')->updateOrInsert(['key' => 'order_refunded_message'], [
-            'value' => json_encode([
-                'status' => $request['order_refunded_message_status'] == 1 ? 1 : 0,
-                'message' => $request['order_refunded_message']
-            ])
-        ]);
+            if($notification == null){
+                $notification = new NotificationMessage();
+            }
 
-        DB::table('business_settings')->updateOrInsert(['key' => 'refund_request_canceled'], [
-            'value' => json_encode([
-                'status' => $request['refund_request_canceled_status'] == 1 ? 1 : 0,
-                'message' => $request['refund_request_canceled']
-            ])
-        ]);
+            $notification->key = 'refund_request_canceled';
+            $notification->module_type = $request->module_type;
+            $notification->message = $request->refund_request_canceled[array_search('en', $request->lang)];
+            $notification->status = $request['refund_request_canceled_status'] == 1 ? 1 : 0;
+            $notification->save();
+            foreach($request->lang as $index=>$key)
+            {
+                if($request->refund_request_canceled[$index] && $key != 'en')
+                {
+                    Translation::updateOrInsert(
+                        ['translationable_type'  => 'App\Models\NotificationMessage',
+                            'translationable_id'    => $notification->id,
+                            'locale'                => $key,
+                            'key'                   => $notification->key],
+                        ['value'                 => $request->refund_request_canceled[$index]]
+                    );
+                }
+            }
+        }
+    
+    
+        $notification = NotificationMessage::where('module_type',$request->module_type)->where('key','out_for_delivery_message')->first();
+        if($notification == null){
+            $notification = new NotificationMessage();
+        }
+
+        $notification->key = 'out_for_delivery_message';
+        $notification->module_type = $request->module_type;
+        $notification->message = $request->out_for_delivery_message[array_search('en', $request->lang)];
+        $notification->status = $request['out_for_delivery_status'] == 1 ? 1 : 0;
+        $notification->save();
+        foreach($request->lang as $index=>$key)
+        {
+            if($request->out_for_delivery_message[$index] && $key != 'en')
+            {
+                Translation::updateOrInsert(
+                    ['translationable_type'  => 'App\Models\NotificationMessage',
+                        'translationable_id'    => $notification->id,
+                        'locale'                => $key,
+                        'key'                   => $notification->key],
+                    ['value'                 => $request->out_for_delivery_message[$index]]
+                );
+            }
+        }
+    
+        $notification = NotificationMessage::where('module_type',$request->module_type)->where('key','order_delivered_message')->first();
+        if($notification == null){
+            $notification = new NotificationMessage();
+        }
+
+        $notification->key = 'order_delivered_message';
+        $notification->module_type = $request->module_type;
+        $notification->message = $request->delivered_message[array_search('en', $request->lang)];
+        $notification->status = $request['delivered_status'] == 1 ? 1 : 0;
+        $notification->save();
+        foreach($request->lang as $index=>$key)
+        {
+            if($request->delivered_message[$index] && $key != 'en')
+            {
+                Translation::updateOrInsert(
+                    ['translationable_type'  => 'App\Models\NotificationMessage',
+                        'translationable_id'    => $notification->id,
+                        'locale'                => $key,
+                        'key'                   => $notification->key],
+                    ['value'                 => $request->delivered_message[$index]]
+                );
+            }
+        }
+    
+        $notification = NotificationMessage::where('module_type',$request->module_type)->where('key','delivery_boy_assign_message')->first();
+        if($notification == null){
+            $notification = new NotificationMessage();
+        }
+
+        $notification->key = 'delivery_boy_assign_message';
+        $notification->module_type = $request->module_type;
+        $notification->message = $request->delivery_boy_assign_message[array_search('en', $request->lang)];
+        $notification->status = $request['delivery_boy_assign_status'] == 1 ? 1 : 0;
+        $notification->save();
+        foreach($request->lang as $index=>$key)
+        {
+            if($request->delivery_boy_assign_message[$index] && $key != 'en')
+            {
+                Translation::updateOrInsert(
+                    ['translationable_type'  => 'App\Models\NotificationMessage',
+                        'translationable_id'    => $notification->id,
+                        'locale'                => $key,
+                        'key'                   => $notification->key],
+                    ['value'                 => $request->delivery_boy_assign_message[$index]]
+                );
+            }
+        }
+    
+        $notification = NotificationMessage::where('module_type',$request->module_type)->where('key','delivery_boy_delivered_message')->first();
+        if($notification == null){
+            $notification = new NotificationMessage();
+        }
+
+        $notification->key = 'delivery_boy_delivered_message';
+        $notification->module_type = $request->module_type;
+        $notification->message = $request->delivery_boy_delivered_message[array_search('en', $request->lang)];
+        $notification->status = $request['delivery_boy_delivered_status'] == 1 ? 1 : 0;
+        $notification->save();
+        foreach($request->lang as $index=>$key)
+        {
+            if($request->delivery_boy_delivered_message[$index] && $key != 'en')
+            {
+                Translation::updateOrInsert(
+                    ['translationable_type'  => 'App\Models\NotificationMessage',
+                        'translationable_id'    => $notification->id,
+                        'locale'                => $key,
+                        'key'                   => $notification->key],
+                    ['value'                 => $request->delivery_boy_delivered_message[$index]]
+                );
+            }
+        }
+    
+        $notification = NotificationMessage::where('module_type',$request->module_type)->where('key','order_cancled_message')->first();
+        if($notification == null){
+            $notification = new NotificationMessage();
+        }
+
+        $notification->key = 'order_cancled_message';
+        $notification->module_type = $request->module_type;
+        $notification->message = $request->order_cancled_message[array_search('en', $request->lang)];
+        $notification->status = $request['order_cancled_message_status'] == 1 ? 1 : 0;
+        $notification->save();
+        foreach($request->lang as $index=>$key)
+        {
+            if($request->order_cancled_message[$index] && $key != 'en')
+            {
+                Translation::updateOrInsert(
+                    ['translationable_type'  => 'App\Models\NotificationMessage',
+                        'translationable_id'    => $notification->id,
+                        'locale'                => $key,
+                        'key'                   => $notification->key],
+                    ['value'                 => $request->order_cancled_message[$index]]
+                );
+            }
+        }
+
 
         Toastr::success(translate('messages.message_updated'));
         return back();
     }
-
 
     public function location_index()
     {
@@ -1424,5 +1645,20 @@ class BusinessSettingsController extends Controller
         }
 
         return response()->json(['success' => $response_flag]);
+    }
+
+
+    public function site_direction(Request $request){
+        if($request->status == 1){
+            DB::table('business_settings')->updateOrInsert(['key' => 'site_direction'], [
+                'value' => 'ltr'
+            ]);
+        } else
+        {
+            DB::table('business_settings')->updateOrInsert(['key' => 'site_direction'], [
+                'value' => 'rtl'
+            ]);
+        }
+        return ;
     }
 }

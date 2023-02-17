@@ -54,12 +54,12 @@
                             class="js-sticky-block js-scrollspy navbar-nav navbar-nav-lg nav-tabs card card-navbar-nav">
                             <li class="nav-item">
                                 <a class="nav-link active text-dark" href="javascript:" id="generalSection">
-                                    <i class="tio-user-outlined nav-icon"></i> {{translate('messages.basic_information')}}
+                                    <i class="tio-user-outlined nav-icon"></i> <span>{{translate('messages.basic_information')}}</span>
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link text-dark" href="javascript:" id="passwordSection">
-                                    <i class="tio-lock-outlined nav-icon"></i> {{translate('messages.password')}}
+                                    <i class="tio-lock-outlined nav-icon"></i> <span>{{translate('messages.password')}}</span>
                                 </a>
                             </li>
                         </ul>
@@ -112,7 +112,7 @@
                             <!-- Form -->
                             <!-- Form Group -->
                             <div class="row form-group">
-                                <label for="firstNameLabel" class="col-sm-3 col-form-label input-label">{{translate('messages.full_name')}} <i
+                                <label for="firstNameLabel" class="col-sm-3 col-form-label input-label d-flex"><span>{{translate('messages.full_name')}}</span> <i
                                         class="tio-help-outlined text-body ml-1" data-toggle="tooltip"
                                         data-placement="top"
                                         title="Display name"></i></label>

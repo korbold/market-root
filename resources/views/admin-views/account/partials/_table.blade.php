@@ -3,9 +3,9 @@
     <td scope="row">{{$k+1}}</td>
     <td>
         @if($at->store)
-        <a href="{{route('admin.store.view',[$at->store['id']])}}">{{ Str::limit($at->store->name, 20, '...') }}</a>
+        <a href="{{route('admin.store.view',[$at->store['id'],'module_id'=>$at->store['module_id']])}}">{{ Str::limit($at->store->name, 20, '...') }}</a>
         @elseif($at->deliveryman)
-        <a href="{{route('admin.delivery-man.preview',[$at->deliveryman->id])}}">{{ $at->deliveryman->f_name }} {{ $at->deliveryman->l_name }}</a>
+        <a href="{{route('admin.users.delivery-man.preview',[$at->deliveryman->id])}}">{{ $at->deliveryman->f_name }} {{ $at->deliveryman->l_name }}</a>
         @else
             {{translate('messages.not_found')}}
         @endif
@@ -20,7 +20,7 @@
     </div></td>
     <td>
         <div class="btn--container justify-content-center">
-            <a href="{{route('admin.account-transaction.show',[$at['id']])}}"
+            <a href="{{route('admin.transactions.account-transaction.view',[$at['id']])}}"
             class="btn action-btn btn--warning btn-outline-warning"><i class="tio-visible"></i>
             </a>
         </div>

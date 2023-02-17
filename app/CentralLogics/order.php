@@ -69,6 +69,19 @@ class OrderLogic
 
             if($order->free_delivery_by == 'admin')
             {
+                if($order->store->self_delivery_system)
+                {
+                    $comission_on_actual_delivery_fee = 0;
+                }else{
+    
+                    $comission_on_actual_delivery_fee = ($order->original_delivery_charge > 0) ? $comission_on_delivery : 0;
+                }
+    
+                //final comission
+                $comission_on_store_amount = ($comission?($order_amount/ 100) * $comission:0);
+                $comission_amount = $comission_on_store_amount + $comission_on_actual_delivery_fee;
+                $dm_commission = $order->original_delivery_charge - $comission_on_actual_delivery_fee;
+
                 $admin_subsidy = $order->original_delivery_charge;
                 Helpers::expenseCreate($order->original_delivery_charge,'free_delivery',now(),$order->id);
             }
@@ -303,9 +316,36 @@ class OrderLogic
                 translate('messages.total')=>\App\CentralLogics\Helpers::format_currency($order['order_amount']),
                 translate('messages.order').' '.translate('messages.status')=>translate('messages.'. $order['order_status']),
                 translate('messages.order').' '.translate('messages.type')=>translate('messages.'.$order['order_type']),
-                translate('messages.coupon_discount_amount')=>$order['coupon_discount_amount']+$order['store_discount_amount'],
+                translate('messages.discount_amount')=>$order['coupon_discount_amount']+$order['store_discount_amount'],
                 translate('messages.total_tax_amount')=>$order['total_tax_amount'],
                 translate('messages.delivery_charge')=>$order['original_delivery_charge']
+            ];
+        }
+        return $data;
+    }
+
+    public static function format_order_report_export_data($orders)
+    {
+        $data = [];
+        foreach($orders as $key=>$order)
+        {
+
+            $data[]=[
+                '#'=>$key+1,
+                translate('messages.order')=>$order['id'],
+                translate('messages.store')=>$order->store?$order->store->name:translate('messages.invalid'),
+                translate('messages.customer_name')=>$order->customer?$order->customer['f_name'].' '.$order->customer['l_name']:translate('messages.invalid').' '.translate('messages.customer').' '.translate('messages.data'),
+                translate('Total Item Amount')=>\App\CentralLogics\Helpers::format_currency($order['order_amount']-$order['dm_tips']-$order['total_tax_amount']-$order['delivery_charge']+$order['coupon_discount_amount'] + $order['store_discount_amount']),
+                translate('Item Discount')=>\App\CentralLogics\Helpers::format_currency($order->details->sum('discount_on_item')),
+                translate('Coupon Discount')=>\App\CentralLogics\Helpers::format_currency($order['coupon_discount_amount']),
+                translate('Discounted Amount')=>\App\CentralLogics\Helpers::format_currency($order['coupon_discount_amount'] + $order['store_discount_amount']),
+                translate('messages.tax')=>\App\CentralLogics\Helpers::format_currency($order['total_tax_amount']),
+                translate('messages.delivery_charge')=>\App\CentralLogics\Helpers::format_currency($order['original_delivery_charge']),
+                translate('messages.order_amount')=>\App\CentralLogics\Helpers::format_currency($order['order_amount']),
+                translate('messages.amount_received_by')=>isset($order->transaction) ? $order->transaction->received_by : translate('messages.unpaid'),
+                translate('messages.payment_method')=>translate(str_replace('_', ' ', $order['payment_method'])),
+                translate('messages.order').' '.translate('messages.status')=>translate('messages.'. $order['order_status']),
+                translate('messages.order').' '.translate('messages.type')=>translate('messages.'.$order['order_type']),
             ];
         }
         return $data;

@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Rap2hpoutre\FastExcel\FastExcel;
 use Illuminate\Support\Facades\DB;
 use App\Scopes\StoreScope;
+use Illuminate\Support\Facades\Config;
 
 class AddOnController extends Controller
 {
@@ -20,6 +21,8 @@ class AddOnController extends Controller
         $addons = AddOn::withoutGlobalScope(StoreScope::class)
         ->when(is_numeric($store_id), function($query)use($store_id){
             return $query->where('store_id', $store_id);
+        })->whereHas('store', function ($q) use ($request) {
+            return $q->where('module_id', Config::get('module.current_module_id'));
         })
         ->orderBy('name')->paginate(config('default_pagination'));
         $store =$store_id !='all'? Store::findOrFail($store_id):null;
@@ -126,7 +129,9 @@ class AddOnController extends Controller
 
     public function search(Request $request){
         $key = explode(' ', $request['search']);
-        $addons=AddOn::where(function ($q) use ($key) {
+        $addons=AddOn::whereHas('store', function ($q) use ($request) {
+            return $q->where('module_id', Config::get('module.current_module_id'));
+        })->where(function ($q) use ($key) {
             foreach ($key as $value) {
                 $q->orWhere('name', 'like', "%{$value}%");
             }
@@ -189,6 +194,8 @@ class AddOnController extends Controller
         })
         ->when($request['type']=='id_wise', function($query)use($request){
             $query->whereBetween('id', [$request['start_id'], $request['end_id']]);
+        })->whereHas('store', function ($q) use ($request) {
+            return $q->where('module_id', Config::get('module.current_module_id'));
         })
         ->withoutGlobalScope(StoreScope::class)->get();
         return (new FastExcel($addons))->download('Addons.xlsx');

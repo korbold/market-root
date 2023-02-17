@@ -19,7 +19,7 @@
     </div>
     <!-- Page Heading -->
     <!-- Content Row -->
-    <form action="{{route('admin.employee.update',[$e['id']])}}" method="post" enctype="multipart/form-data" class="js-validate">
+    <form action="{{route('admin.users.employee.update',[$e['id']])}}" method="post" enctype="multipart/form-data" class="js-validate">
         @csrf
 
         <div class="card">

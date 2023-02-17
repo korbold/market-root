@@ -83,6 +83,24 @@
                             </label>
                         </div>
                     </div>
+                    
+                    @if ($store->module->module_type == 'pharmacy')
+                    @php($prescription_order_status = \App\Models\BusinessSetting::where('key', 'prescription_order_status')->first())
+                    @php($prescription_order_status = $prescription_order_status ? $prescription_order_status->value : 0)
+                        @if ($prescription_order_status)
+                            <div class="col-xl-4 col-lg-4 col-md-6 col-sm-6 col-12">
+                                <div class="form-group mb-0">
+                                    <label class="toggle-switch toggle-switch-sm d-flex justify-content-between border border-secondary rounded px-4 form-control" for="prescription_order">
+                                        <span class="pr-2 text-capitalize">{{translate('messages.prescription_order')}}:</span>
+                                        <input type="checkbox" class="toggle-switch-input" onclick="location.href='{{route('vendor.business-settings.toggle-settings',[$store->id,$store->prescription_order?0:1, 'prescription_order'])}}'" id="prescription_order" {{$store->prescription_order?'checked':''}}>
+                                        <span class="toggle-switch-label">
+                                            <span class="toggle-switch-indicator"></span>
+                                        </span>
+                                    </label>
+                                </div>
+                            </div>
+                        @endif
+                    @endif
                     @if ($store->self_delivery_system == 1)
                     <div class="col-lg-4 col-sm-6">
                         <div class="form-group m-0">

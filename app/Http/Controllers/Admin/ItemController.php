@@ -14,10 +14,12 @@ use Illuminate\Support\Facades\Storage;
 use App\CentralLogics\Helpers;
 use App\CentralLogics\ProductLogic;
 use App\Models\ItemCampaign;
+use App\Models\Tag;
 use Rap2hpoutre\FastExcel\FastExcel;
 use Illuminate\Support\Facades\DB;
 use App\Scopes\StoreScope;
 use App\Models\Translation;
+use Illuminate\Support\Facades\Config;
 
 class ItemController extends Controller
 {
@@ -37,7 +39,6 @@ class ItemController extends Controller
             'price' => 'required|numeric|between:.01,999999999999.99',
             'discount' => 'required|numeric|min:0',
             'store_id' => 'required',
-            'module_id' => 'required',
             'description.*' => 'max:1000',
         ], [
             'description.*.max' => translate('messages.description_length_warning'),
@@ -57,6 +58,20 @@ class ItemController extends Controller
 
         if ($request['price'] <= $dis || $validator->fails()) {
             return response()->json(['errors' => Helpers::error_processor($validator)]);
+        }
+        
+        $tag_ids = [];
+        if ($request->tags != null) {
+            $tags = explode(",", $request->tags);
+        }
+        if(isset($tags)){
+            foreach ($tags as $key => $value) {
+                $tag = Tag::firstOrNew(
+                    ['tag' => $value]
+                );
+                $tag->save();
+                array_push($tag_ids,$tag->id);
+            }
         }
 
         $item = new Item;
@@ -81,7 +96,6 @@ class ItemController extends Controller
                 'position' => 3,
             ]);
         }
-
         $item->category_ids = json_encode($category);
         $item->category_id = $request->sub_category_id ? $request->sub_category_id : $request->category_id;
         $item->description =  $request->description[array_search('en', $request->lang)];
@@ -141,6 +155,43 @@ class ItemController extends Controller
             $images = $img_names;
         }
 
+        // food variation
+        $food_variations = [];
+        if (isset($request->options)) {
+            foreach (array_values($request->options) as $key => $option) {
+
+                $temp_variation['name'] = $option['name'];
+                $temp_variation['type'] = $option['type'];
+                $temp_variation['min'] = $option['min'] ?? 0;
+                $temp_variation['max'] = $option['max'] ?? 0;
+                $temp_variation['required'] = $option['required'] ?? 'off';
+                if ($option['min'] > 0 &&  $option['min'] > $option['max']) {
+                    $validator->getMessageBag()->add('name', translate('messages.minimum_value_can_not_be_greater_then_maximum_value'));
+                    return response()->json(['errors' => Helpers::error_processor($validator)]);
+                }
+                if (!isset($option['values'])) {
+                    $validator->getMessageBag()->add('name', translate('messages.please_add_options_for') . $option['name']);
+                    return response()->json(['errors' => Helpers::error_processor($validator)]);
+                }
+                if ($option['max'] > count($option['values'])) {
+                    $validator->getMessageBag()->add('name', translate('messages.please_add_more_options_or_change_the_max_value_for') . $option['name']);
+                    return response()->json(['errors' => Helpers::error_processor($validator)]);
+                }
+                $temp_value = [];
+
+                foreach (array_values($option['values']) as $value) {
+                    if (isset($value['label'])) {
+                        $temp_option['label'] = $value['label'];
+                    }
+                    $temp_option['optionPrice'] = $value['optionPrice'];
+                    array_push($temp_value, $temp_option);
+                }
+                $temp_variation['values'] = $temp_value;
+                array_push($food_variations, $temp_variation);
+            }
+        }
+
+        $item->food_variations = json_encode($food_variations);
         $item->variations = json_encode($variations);
         $item->price = $request->price;
         $item->image = Helpers::upload('product/', 'png', $request->file('image'));
@@ -153,10 +204,11 @@ class ItemController extends Controller
         $item->add_ons = $request->has('addon_ids') ? json_encode($request->addon_ids) : json_encode([]);
         $item->store_id = $request->store_id;
         $item->veg = $request->veg;
-        $item->module_id = $request->module_id;
+        $item->module_id = Config::get('module.current_module_id');
         $item->stock = $request->current_stock ?? 0;
         $item->images = $images;
         $item->save();
+        $item->tags()->sync($tag_ids);
 
         $data = [];
         foreach ($request->lang as $index => $key) {
@@ -250,6 +302,20 @@ class ItemController extends Controller
         if ($request['price'] <= $dis || $validator->fails()) {
             return response()->json(['errors' => Helpers::error_processor($validator)]);
         }
+        
+        $tag_ids = [];
+        if ($request->tags != null) {
+            $tags = explode(",", $request->tags);
+        }
+        if(isset($tags)){
+            foreach ($tags as $key => $value) {
+                $tag = Tag::firstOrNew(
+                    ['tag' => $value]
+                );
+                $tag->save();
+                array_push($tag_ids,$tag->id);
+            }
+        }
 
         $item = Item::withoutGlobalScope(StoreScope::class)->find($id);
 
@@ -331,6 +397,40 @@ class ItemController extends Controller
             }
         }
 
+        $food_variations = [];
+        if (isset($request->options)) {
+            foreach (array_values($request->options) as $key => $option) {
+                $temp_variation['name'] = $option['name'];
+                $temp_variation['type'] = $option['type'];
+                $temp_variation['min'] = $option['min'] ?? 0;
+                $temp_variation['max'] = $option['max'] ?? 0;
+                if ($option['min'] > 0 &&  $option['min'] > $option['max']) {
+                    $validator->getMessageBag()->add('name', translate('messages.minimum_value_can_not_be_greater_then_maximum_value'));
+                    return response()->json(['errors' => Helpers::error_processor($validator)]);
+                }
+                if (!isset($option['values'])) {
+                    $validator->getMessageBag()->add('name', translate('messages.please_add_options_for') . $option['name']);
+                    return response()->json(['errors' => Helpers::error_processor($validator)]);
+                }
+                if ($option['max'] > count($option['values'])) {
+                    $validator->getMessageBag()->add('name', translate('messages.please_add_more_options_or_change_the_max_value_for') . $option['name']);
+                    return response()->json(['errors' => Helpers::error_processor($validator)]);
+                }
+                $temp_variation['required'] = $option['required'] ?? 'off';
+                $temp_value = [];
+                foreach (array_values($option['values']) as $value) {
+                    if (isset($value['label'])) {
+                        $temp_option['label'] = $value['label'];
+                    }
+                    $temp_option['optionPrice'] = $value['optionPrice'];
+                    array_push($temp_value, $temp_option);
+                }
+                $temp_variation['values'] = $temp_value;
+                array_push($food_variations, $temp_variation);
+            }
+        }
+
+        $item->food_variations = json_encode($food_variations);
         $item->variations = $request->has('attribute_id') ? json_encode($variations) : json_encode([]);
         $item->price = $request->price;
         $item->image = $request->has('image') ? Helpers::update('product/', $item->image, 'png', $request->file('image')) : $item->image;
@@ -348,6 +448,7 @@ class ItemController extends Controller
         $item->veg = $request->veg;
         $item->images = $images;
         $item->save();
+        $item->tags()->sync($tag_ids);
 
         foreach ($request->lang as $index => $key) {
             if ($request->name[$index] && $key != 'en') {
@@ -427,40 +528,57 @@ class ItemController extends Controller
 
     public function variant_price(Request $request)
     {
-        if ($request->item_type == 'food') {
+        if ($request->item_type == 'item') {
             $product = Item::withoutGlobalScope(StoreScope::class)->find($request->id);
         } else {
             $product = ItemCampaign::find($request->id);
         }
         // $product = Item::withoutGlobalScope(StoreScope::class)->find($request->id);
-        $str = '';
-        $quantity = 0;
-        $price = 0;
-        $addon_price = 0;
-
-        foreach (json_decode($product->choice_options) as $key => $choice) {
-            if ($str != null) {
-                $str .= '-' . str_replace(' ', '', $request[$choice->name]);
-            } else {
-                $str .= str_replace(' ', '', $request[$choice->name]);
-            }
-        }
-
-        if ($request['addon_id']) {
-            foreach ($request['addon_id'] as $id) {
-                $addon_price += $request['addon-price' . $id] * $request['addon-quantity' . $id];
-            }
-        }
-
-        if ($str != null) {
-            $count = count(json_decode($product->variations));
-            for ($i = 0; $i < $count; $i++) {
-                if (json_decode($product->variations)[$i]->type == $str) {
-                    $price = json_decode($product->variations)[$i]->price - Helpers::product_discount_calculate($product, json_decode($product->variations)[$i]->price, $product->store);
+        if (isset($product->module_id) && $product->module->module_type == 'food' && $product->food_variations) {
+            $price = $product->price;
+            $addon_price = 0;
+            if ($request['addon_id']) {
+                foreach ($request['addon_id'] as $id) {
+                    $addon_price += $request['addon-price' . $id] * $request['addon-quantity' . $id];
                 }
             }
+            $product_variations = json_decode($product->food_variations, true);
+            if ($request->variations && count($product_variations)) {
+
+                $price += Helpers::food_variation_price($product_variations, $request->variations);
+            } else {
+                $price = $product->price - Helpers::product_discount_calculate($product, $product->price, $product->store);
+            }
         } else {
-            $price = $product->price - Helpers::product_discount_calculate($product, $product->price, $product->store);
+            $str = '';
+            $quantity = 0;
+            $price = 0;
+            $addon_price = 0;
+
+            foreach (json_decode($product->choice_options) as $key => $choice) {
+                if ($str != null) {
+                    $str .= '-' . str_replace(' ', '', $request[$choice->name]);
+                } else {
+                    $str .= str_replace(' ', '', $request[$choice->name]);
+                }
+            }
+
+            if ($request['addon_id']) {
+                foreach ($request['addon_id'] as $id) {
+                    $addon_price += $request['addon-price' . $id] * $request['addon-quantity' . $id];
+                }
+            }
+
+            if ($str != null) {
+                $count = count(json_decode($product->variations));
+                for ($i = 0; $i < $count; $i++) {
+                    if (json_decode($product->variations)[$i]->type == $str) {
+                        $price = json_decode($product->variations)[$i]->price - Helpers::product_discount_calculate($product, json_decode($product->variations)[$i]->price, $product->store);
+                    }
+                }
+            } else {
+                $price = $product->price - Helpers::product_discount_calculate($product, $product->price, $product->store);
+            }
         }
 
         return array('price' => Helpers::format_currency(($price * $request->quantity) + $addon_price));
@@ -468,8 +586,8 @@ class ItemController extends Controller
     public function get_categories(Request $request)
     {
         $cat = Category::when(isset($request->module_id), function ($query) use ($request) {
-                $query->where('module_id', $request->module_id);
-            })
+            $query->where('module_id', $request->module_id);
+        })
             ->when($request->sub_category, function ($query) {
                 $query->where('position', '>', '0');
             })
@@ -523,6 +641,7 @@ class ItemController extends Controller
                     return $q->whereId($category_id)->orWhere('parent_id', $category_id);
                 });
             })
+            ->module(Config::get('module.current_module_id'))
             ->type($type)
             ->latest()->paginate(config('default_pagination'));
         $store = $store_id != 'all' ? Store::findOrFail($store_id) : null;
@@ -560,7 +679,7 @@ class ItemController extends Controller
             foreach ($key as $value) {
                 $q->where('name', 'like', "%{$value}%");
             }
-        })->limit(50)->get();
+        })->module(Config::get('module.current_module_id'))->limit(50)->get();
         return response()->json([
             'count' => count($items),
             'view' => view('admin-views.product.partials._table', compact('items'))->render()
@@ -570,8 +689,10 @@ class ItemController extends Controller
     public function review_list(Request $request)
     {
         $reviews = Review::with(['item'=>function($query){
-            $query->withoutGlobalScope(StoreScope::class);
-        }, 'customer'])->latest()->paginate(config('default_pagination'));
+            $query->withOutGlobalScope(StoreScope::class);
+        }, 'customer'])->whereHas('item', function ($q) use ($request) {
+            return $q->where('module_id', Config::get('module.current_module_id'))->withOutGlobalScope(StoreScope::class);
+        })->latest()->paginate(config('default_pagination'));   
         return view('admin-views.product.reviews-list', compact('reviews'));
     }
 
@@ -587,10 +708,12 @@ class ItemController extends Controller
     public function review_search(Request $request)
     {
         $key = explode(' ', $request['search']);
-        $reviews = Review::with('item')->whereHas('item',function($query)use($key){
+        $reviews = Review::with('item')->whereHas('item', function ($query) use ($key) {
             foreach ($key as $value) {
                 $query->where('name', 'like', "%{$value}%");
             }
+        })->whereHas('item', function ($q) use ($request) {
+            return $q->where('module_id', Config::get('module.current_module_id'))->withoutGlobalScope(StoreScope::class);
         })->limit(50)->get();
         return response()->json([
             'count' => count($reviews),
@@ -680,6 +803,7 @@ class ItemController extends Controller
             ->when($request['type'] == 'id_wise', function ($query) use ($request) {
                 $query->whereBetween('id', [$request['start_id'], $request['end_id']]);
             })
+            ->module(Config::get('module.current_module_id'))
             ->withoutGlobalScope(StoreScope::class)->get();
         return (new FastExcel(ProductLogic::format_export_items($products)))->download('Items.xlsx');
     }
@@ -715,84 +839,86 @@ class ItemController extends Controller
         $product->save();
         Toastr::success(translate("messages.product_updated_successfully"));
         return back();
-
-
     }
 
-    public function search_vendor(Request $request){
+    public function search_vendor(Request $request)
+    {
         $key = explode(' ', $request['search']);
-        if($request->has('store_id')){
+        if ($request->has('store_id')) {
 
             $foods = Item::withoutGlobalScope(StoreScope::class)
-                            ->where('store_id', $request->store_id)
-                            ->where(function($q) use($key){
-                                foreach ($key as $value) {
-                                    $q->where('name', 'like', "%{$value}%");
-
-                                }
-                            })->limit(50)->get();
-                            return response()->json(['count'=>count($foods),
-                            'view'=>view('admin-views.vendor.view.partials._product',compact('foods'))->render()
-                        ]);
-
+                ->where('store_id', $request->store_id)
+                ->where(function ($q) use ($key) {
+                    foreach ($key as $value) {
+                        $q->where('name', 'like', "%{$value}%");
+                    }
+                })->limit(50)->get();
+            return response()->json([
+                'count' => count($foods),
+                'view' => view('admin-views.vendor.view.partials._product', compact('foods'))->render()
+            ]);
         }
-        $foods=Item::withoutGlobalScope(StoreScope::class)->where(function ($q) use ($key) {
+        $foods = Item::withoutGlobalScope(StoreScope::class)->where(function ($q) use ($key) {
             foreach ($key as $value) {
                 $q->where('name', 'like', "%{$value}%");
             }
         })->limit(50)->get();
-        return response()->json(['count'=>count($foods),
-            'view'=>view('admin-views.vendor.view.partials._product',compact('foods'))->render()
+        return response()->json([
+            'count' => count($foods),
+            'view' => view('admin-views.vendor.view.partials._product', compact('foods'))->render()
         ]);
     }
 
-    public function store_item_export($type, $store_id){
+    public function store_item_export($type, $store_id)
+    {
         $item = Item::withoutGlobalScope(StoreScope::class)->with('category')->where('store_id', $store_id)->get();
-        if($type == 'excel'){
+        if ($type == 'excel') {
             return (new FastExcel(Helpers::export_store_item($item)))->download('Items.xlsx');
-        }elseif($type == 'csv'){
+        } elseif ($type == 'csv') {
             return (new FastExcel(Helpers::export_store_item($item)))->download('Items.csv');
         }
     }
 
-    public function export(Request $request, $types){
+    public function export(Request $request, $types)
+    {
         $store_id = $request->query('store_id', 'all');
         $category_id = $request->query('category_id', 'all');
         $type = $request->query('type', 'all');
         $item = Item::withoutGlobalScope(StoreScope::class)
-        ->when($request->query('module_id', null), function ($query) use ($request) {
-            return $query->module($request->query('module_id'));
-        })
-        ->when(is_numeric($store_id), function ($query) use ($store_id) {
-            return $query->where('store_id', $store_id);
-        })
-        ->when(is_numeric($category_id), function ($query) use ($category_id) {
-            return $query->whereHas('category', function ($q) use ($category_id) {
-                return $q->whereId($category_id)->orWhere('parent_id', $category_id);
-            });
-        })
-        ->with('category','store')
-        ->type($type)->latest()->get();;
-        if($types == 'excel'){
+            ->when($request->query('module_id', null), function ($query) use ($request) {
+                return $query->module($request->query('module_id'));
+            })
+            ->when(is_numeric($store_id), function ($query) use ($store_id) {
+                return $query->where('store_id', $store_id);
+            })
+            ->when(is_numeric($category_id), function ($query) use ($category_id) {
+                return $query->whereHas('category', function ($q) use ($category_id) {
+                    return $q->whereId($category_id)->orWhere('parent_id', $category_id);
+                });
+            })
+            ->module(Config::get('module.current_module_id'))
+            ->with('category', 'store')
+            ->type($type)->latest()->get();
+        if ($types == 'excel') {
             return (new FastExcel(Helpers::export_items($item)))->download('Items.xlsx');
-        }elseif($types == 'csv'){
+        } elseif ($types == 'csv') {
             return (new FastExcel(Helpers::export_items($item)))->download('Items.csv');
         }
     }
 
-    public function search_store(Request $request, $store_id){
+    public function search_store(Request $request, $store_id)
+    {
         $key = explode(' ', $request['search']);
         $foods = Item::withoutGlobalScope(StoreScope::class)
-        ->where('store_id', $store_id)
-        ->where(function($q) use($key){
-            foreach ($key as $value) {
-                $q->where('name', 'like', "%{$value}%");
-
-            }
-        })->limit(50)->get();
-        return response()->json(['count'=>count($foods),
-        'view'=>view('admin-views.vendor.view.partials._product',compact('foods'))->render()
+            ->where('store_id', $store_id)
+            ->where(function ($q) use ($key) {
+                foreach ($key as $value) {
+                    $q->where('name', 'like', "%{$value}%");
+                }
+            })->limit(50)->get();
+        return response()->json([
+            'count' => count($foods),
+            'view' => view('admin-views.vendor.view.partials._product', compact('foods'))->render()
         ]);
     }
-
 }

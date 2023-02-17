@@ -1,7 +1,13 @@
 <!-- Header -->
-<div class="card-header align-items-center flex-wrap">
-    <h5 class="card-header-title text-capitalize">
-        <i class="tio-star"></i> {{translate('messages.top_rated_items')}}
+<div class="card-header border-0 order-header-shadow">
+    <h5 class="card-title d-flex justify-content-between">
+        <span>
+            {{translate('top rated')}}@if (Config::get('module.current_module_type')== 'food')
+            {{ translate('messages.foods') }}
+        @else
+            {{ translate('messages.items') }}
+        @endif
+        </span>
     </h5>
     @php($params=session('dash_params'))
     @if($params['zone_id']!='all')
@@ -9,29 +15,26 @@
     @else
         @php($zone_name = translate('messages.all'))
     @endif
-    <label class="badge badge-soft-primary">{{translate('messages.zone')}} : {{$zone_name}}</label>
+    {{--<label class="badge badge-soft-primary">{{translate('messages.zone')}} : {{$zone_name}}</label>--}}
+    <a href="{{ route('admin.item.list') }}" class="fz-12px font-medium text-006AE5">{{translate('view_all')}}</a>
 </div>
 <!-- End Header -->
 
 <!-- Body -->
 <div class="card-body">
-    <div class="row g-2">
+    <div class="rated--products">
         @foreach($top_rated_foods as $key=>$item)
-            <div class="col-md-4 col-6">
-                <div class="grid-card top--rated-food pb-4 cursor-pointer" onclick="location.href='{{route('admin.item.view',[$item['id']])}}'">
-                    <center>
-                        <img class="rounded" src="{{asset('storage/app/public/product')}}/{{$item['image']}}" onerror="this.src='{{asset('public/assets/admin/img/100x100/2.png')}}'" alt="{{Str::limit($item->name??translate('messages.Item deleted!'),20,'...')}}">
-                    </center>
-
-                    <div class="text-center mt-3">
-                        <h5 class="name m-0 mb-1">{{Str::limit($item->name??translate('messages.Item deleted!'),20,'...')}}</h5>
-                        <div class="rating">
-                            <span class="text-warning"><i class="tio-star"></i> {{round($item['avg_rating'],1)}}</span>
-                            <span class="text--title">({{$item['rating_count']}}  {{ translate('messages.review') }})</span>
-                        </div>
+            <a href="{{route('admin.item.view',[$item['id']])}}">
+                <div class="rated-media d-flex align-items-center">
+                    <img src="{{asset('storage/app/public/product')}}/{{$item['image']}}" onerror="this.src='{{asset('public/assets/admin/img/100x100/2.png')}}'" alt="{{Str::limit($item->name??translate('messages.Item deleted!'),20,'...')}}">
+                    <span class="line--limit-1 w-0 flex-grow-1">
+                        {{Str::limit($item->name??translate('messages.Item deleted!'),20,'...')}}
+                    </span>
+                    <div>
+                        <span class="text-FF6D6D">{{$item['rating_count']}} <i class="tio-heart"></i></span>
                     </div>
                 </div>
-            </div>
+            </a>
         @endforeach
     </div>
 </div>

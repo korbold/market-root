@@ -14,7 +14,7 @@
     </td>
     <td>
         <label class="toggle-switch toggle-switch-sm" for="stocksCheckbox{{$module->id}}">
-        <input type="checkbox" onclick="location.href='{{route('admin.module.status',[$module['id'],$module->status?0:1])}}'"class="toggle-switch-input" id="stocksCheckbox{{$module->id}}" {{$module->status?'checked':''}}>
+        <input type="checkbox" onclick="location.href='{{route('admin.business-settings.module.status',[$module['id'],$module->status?0:1])}}'"class="toggle-switch-input" id="stocksCheckbox{{$module->id}}" {{$module->status?'checked':''}}>
             <span class="toggle-switch-label">
                 <span class="toggle-switch-indicator"></span>
             </span>
@@ -24,7 +24,7 @@
     <td>
         <div class="btn--container justify-content-center">
             <a class="btn action-btn btn--primary btn-outline-primary"
-                href="{{route('admin.module.edit',[$module['id']])}}" title="{{translate('messages.edit')}} {{translate('messages.category')}}"><i class="tio-edit"></i>
+                href="{{route('admin.business-settings.module.edit',[$module['id']])}}" title="{{translate('messages.edit')}} {{translate('messages.category')}}"><i class="tio-edit"></i>
             </a>
         </div>
     </td>

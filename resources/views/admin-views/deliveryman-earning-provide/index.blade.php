@@ -22,7 +22,7 @@
     <!-- Page Heading -->
     <div class="card">
         <div class="card-body">
-            <form action="{{route('admin.provide-deliveryman-earnings.store')}}" method='post' id="add_transaction">
+            <form action="{{route('admin.transactions.provide-deliveryman-earnings.store')}}" method='post' id="add_transaction">
                 @csrf
                 <div class="row g-3">
                     <div class="col-sm-6">
@@ -116,13 +116,13 @@
                                 <div class="dropdown-divider"></div> --}}
                                 <span class="dropdown-header">{{ translate('messages.download') }}
                                     {{ translate('messages.options') }}</span>
-                                <a id="export-excel" class="dropdown-item" href="{{route('admin.export-deliveryman-earning', ['type'=>'excel'])}}">
+                                <a id="export-excel" class="dropdown-item" href="{{route('admin.transactions.export-deliveryman-earning', ['type'=>'excel'])}}">
                                     <img class="avatar avatar-xss avatar-4by3 mr-2"
                                         src="{{ asset('public/assets/admin') }}/svg/components/excel.svg"
                                         alt="Image Description">
                                     {{ translate('messages.excel') }}
                                 </a>
-                                <a id="export-csv" class="dropdown-item" href="{{route('admin.export-deliveryman-earning', ['type'=>'csv'])}}">
+                                <a id="export-csv" class="dropdown-item" href="{{route('admin.transactions.export-deliveryman-earning', ['type'=>'csv'])}}">
                                     <img class="avatar avatar-xss avatar-4by3 mr-2"
                                         src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                         alt="Image Description">
@@ -157,7 +157,7 @@
                             @foreach($provide_dm_earning as $k=>$at)
                                 <tr>
                                     <td scope="row">{{$k+$provide_dm_earning->firstItem()}}</td>
-                                    <td>@if($at->delivery_man)<a href="{{route('admin.delivery-man.preview', $at->delivery_man_id)}}">{{$at->delivery_man->f_name.' '.$at->delivery_man->l_name}}</a> @else <label class="text-capitalize text-danger">{{translate('messages.deliveryman')}} {{translate('messages.deleted')}}</label> @endif </td>
+                                    <td>@if($at->delivery_man)<a href="{{route('admin.users.delivery-man.preview', $at->delivery_man_id)}}">{{$at->delivery_man->f_name.' '.$at->delivery_man->l_name}}</a> @else <label class="text-capitalize text-danger">{{translate('messages.deliveryman')}} {{translate('messages.deleted')}}</label> @endif </td>
                                     <td>{{$at->created_at->format('Y-m-d '.config('timeformat'))}}</td>
                                     <td>{{$at['amount']}}</td>
                                     <td>{{$at['method']}}</td>
@@ -259,7 +259,7 @@
             }
         });
         $.post({
-            url: '{{route('admin.search-deliveryman-earning')}}',
+            url: '{{route('admin.transactions.search-deliveryman-earning')}}',
             data: formData,
             cache: false,
             contentType: false,
@@ -287,7 +287,7 @@
             }
         });
         $.post({
-            url: '{{route('admin.provide-deliveryman-earnings.store')}}',
+            url: '{{route('admin.transactions.provide-deliveryman-earnings.store')}}',
             data: formData,
             cache: false,
             contentType: false,
@@ -306,7 +306,7 @@
                         ProgressBar: true
                     });
                     setTimeout(function () {
-                        location.href = '{{route('admin.provide-deliveryman-earnings.index')}}';
+                        location.href = '{{route('admin.transactions.provide-deliveryman-earnings.index')}}';
                     }, 2000);
                 }
             }

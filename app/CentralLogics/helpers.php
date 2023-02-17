@@ -13,6 +13,7 @@ use Illuminate\Support\Carbon;
 use App\Models\BusinessSetting;
 use App\CentralLogics\StoreLogic;
 use App\Models\Expense;
+use App\Models\NotificationMessage;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\App;
@@ -21,6 +22,7 @@ use Illuminate\Support\Facades\Storage;
 use Laravelpkg\Laravelchk\Http\Controllers\LaravelchkController;
 use Grimzy\LaravelMysqlSpatial\Types\Point;
 use Illuminate\Support\Str;
+use PayPal\Api\Transaction;
 
 class Helpers
 {
@@ -118,6 +120,8 @@ class Helpers
                     ]);
                 }
                 $item['variations'] = $variations;
+                $item['food_variations'] = $item['food_variations']?json_decode($item['food_variations'], true):'';
+                $item['module_type'] = $item->module->module_type;
                 $item['store_name'] = $item->store->name;
                 $item['zone_id'] = $item->store->zone_id;
                 $item['store_discount'] = self::get_store_discount($item->store) ? $item->store->discount->discount : 0;
@@ -209,7 +213,9 @@ class Helpers
                 unset($data['end_date']);
             }
             $data['variations'] = $variations;
+            $data['food_variations'] = $data['food_variations']?json_decode($data['food_variations'], true):'';
             $data['store_name'] = $data->store->name;
+            $data['module_type'] = $data->module->module_type;
             $data['zone_id'] = $data->store->zone_id;
             $data['store_discount'] = self::get_store_discount($data->store) ? $data->store->discount->discount : 0;
             $data['schedule_order'] = $data->store->schedule_order;
@@ -422,7 +428,7 @@ class Helpers
                 $ratings = StoreLogic::calculate_store_rating($item['rating']);
                 unset($item['rating']);
                 $item['avg_rating'] = $ratings['rating'];
-                $item['rating_count '] = $ratings['total'];
+                $item['rating_count'] = $ratings['total'];
                 unset($item['campaigns']);
                 unset($item['pivot']);
                 array_push($storage, $item);
@@ -432,7 +438,7 @@ class Helpers
             $ratings = StoreLogic::calculate_store_rating($data['rating']);
             unset($data['rating']);
             $data['avg_rating'] = $ratings['rating'];
-            $data['rating_count '] = $ratings['total'];
+            $data['rating_count'] = $ratings['total'];
             unset($data['campaigns']);
             unset($data['pivot']);
         }
@@ -496,6 +502,9 @@ class Helpers
 
                 $item['delivery_address'] = $item->delivery_address ? json_decode($item->delivery_address, true) : null;
                 $item['details_count'] = (int)$item->details->count();
+                if($item['prescription_order'] && $item['order_attachment']){
+                    $item['order_attachment'] = json_decode($item['order_attachment'], true);
+                }
                 unset($item['details']);
                 array_push($storage, $item);
             }
@@ -526,6 +535,9 @@ class Helpers
             }
             $data['delivery_address'] = $data->delivery_address ? json_decode($data->delivery_address, true) : null;
             $data['details_count'] = (int)$data->details->count();
+            if($data['prescription_order'] && $data['order_attachment']){
+                $data['order_attachment'] = json_decode($data['order_attachment'], true);
+            }
             unset($data['details']);
         }
         return $data;
@@ -536,7 +548,7 @@ class Helpers
         $storage = [];
         foreach ($data as $item) {
             $item['add_ons'] = json_decode($item['add_ons']);
-            $item['variation'] = json_decode($item['variation']);
+            $item['variation'] = json_decode($item['variation'], true);
             $item['item_details'] = json_decode($item['item_details'], true);
             array_push($storage, $item);
         }
@@ -553,6 +565,7 @@ class Helpers
                 'id' => $item['id'],
                 'name' => $item['f_name'] . ' ' . $item['l_name'],
                 'image' => $item['image'],
+                'assigned_order_count' => $item['assigned_order_count'],
                 'lat' => $item->last_location ? $item->last_location->latitude : false,
                 'lng' => $item->last_location ? $item->last_location->longitude : false,
                 'location' => $item->last_location ? $item->last_location->location : '',
@@ -600,23 +613,54 @@ class Helpers
 
     public static function currency_code()
     {
-        return BusinessSetting::where(['key' => 'currency'])->first()->value;
+        if(!request()->is('/api*') && !session()->has('currency_code')){
+            $currency = BusinessSetting::where(['key' => 'currency'])->first()->value;
+            session()->put('currency_code',$currency);
+        }else{
+            $currency = BusinessSetting::where(['key' => 'currency'])->first()->value;
+        }
+
+        if(!request()->is('/api*')){
+            $currency = session()->get('currency_code');
+        }
+       
+        return $currency;
     }
+
+    // public static function currency_symbol()
+    // {
+    //     $currency_symbol = Currency::where(['currency_code' => Helpers::currency_code()])->first()->currency_symbol;
+    //     return $currency_symbol;
+    // }
 
     public static function currency_symbol()
     {
-        $currency_symbol = Currency::where(['currency_code' => Helpers::currency_code()])->first()->currency_symbol;
+        if(!session()->has('currency_symbol')){
+            $currency_symbol = Currency::where(['currency_code' => Helpers::currency_code()])->first()->currency_symbol;
+            session()->put('currency_symbol',$currency_symbol);
+        }
+        $currency_symbol = session()->get('currency_symbol');
         return $currency_symbol;
     }
 
+    // public static function format_currency($value)
+    // {
+    //     $currency_symbol_position = BusinessSetting::where(['key' => 'currency_symbol_position'])->first()->value;
+
+    //     return $currency_symbol_position == 'right' ? number_format($value, config('round_up_to_digit')) . ' ' . self::currency_symbol() : self::currency_symbol() . ' ' . number_format($value, config('round_up_to_digit'));
+    // }
+
     public static function format_currency($value)
     {
-        $currency_symbol_position = BusinessSetting::where(['key' => 'currency_symbol_position'])->first()->value;
-
+        if(!session()->has('currency_symbol_position')){
+            $currency_symbol_position = BusinessSetting::where(['key' => 'currency_symbol_position'])->first()->value;
+            session()->put('currency_symbol_position',$currency_symbol_position);
+        }
+        $currency_symbol_position = session()->get('currency_symbol_position');
         return $currency_symbol_position == 'right' ? number_format($value, config('round_up_to_digit')) . ' ' . self::currency_symbol() : self::currency_symbol() . ' ' . number_format($value, config('round_up_to_digit'));
     }
 
-    public static function send_push_notif_to_device($fcm_token, $data)
+    public static function send_push_notif_to_device($fcm_token, $data, $web_push_link = null)
     {
         $key = BusinessSetting::where(['key' => 'push_notification_key'])->first()->value;
         $url = "https://fcm.googleapis.com/fcm/send";
@@ -640,6 +684,22 @@ class Helpers
         }else{
             $sender_type = '';
         }
+        if(isset($data['module_id'])){
+            $module_id = $data['module_id'];
+        }else{
+            $module_id = '';
+        }
+        if(isset($data['order_type'])){
+            $order_type = $data['order_type'];
+        }else{
+            $order_type = '';
+        }
+
+        $click_action = "";
+        if($web_push_link){
+            $click_action = ',
+            "click_action": "'.$web_push_link.'"';
+        }
 
         $postdata = '{
             "to" : "' . $fcm_token . '",
@@ -652,6 +712,8 @@ class Helpers
                 "type":"' . $data['type'] . '",
                 "conversation_id":"' . $conversation_id . '",
                 "sender_type":"' . $sender_type . '",
+                "module_id":"' . $module_id . '",
+                "order_type":"' . $order_type . '",
                 "is_read": 0
             },
             "notification" : {
@@ -666,6 +728,7 @@ class Helpers
                 "icon" : "new",
                 "sound": "notification.wav",
                 "android_channel_id": "6ammart"
+                '.$click_action.'
             }
         }';
         $ch = curl_init();
@@ -685,7 +748,7 @@ class Helpers
         return $result;
     }
 
-    public static function send_push_notif_to_topic($data, $topic, $type)
+    public static function send_push_notif_to_topic($data, $topic, $type,$web_push_link = null)
     {
         $key = BusinessSetting::where(['key' => 'push_notification_key'])->first()->value;
 
@@ -694,6 +757,23 @@ class Helpers
             "authorization: key=" . $key . "",
             "content-type: application/json"
         );
+        if(isset($data['module_id'])){
+            $module_id = $data['module_id'];
+        }else{
+            $module_id = '';
+        }
+        if(isset($data['order_type'])){
+            $order_type = $data['order_type'];
+        }else{
+            $order_type = '';
+        }
+
+        $click_action = "";
+        if($web_push_link){
+            $click_action = ',
+            "click_action": "'.$web_push_link.'"';
+        }
+
         if (isset($data['order_id'])) {
             $postdata = '{
                 "to" : "/topics/' . $topic . '",
@@ -703,6 +783,8 @@ class Helpers
                     "body" : "' . $data['description'] . '",
                     "image" : "' . $data['image'] . '",
                     "order_id":"' . $data['order_id'] . '",
+                    "module_id":"' . $module_id . '",
+                    "order_type":"' . $order_type . '",
                     "is_read": 0,
                     "type":"' . $type . '"
                 },
@@ -718,6 +800,7 @@ class Helpers
                     "icon" : "new",
                     "sound": "notification.wav",
                     "android_channel_id": "6ammart"
+                    '.$click_action.'
                   }
             }';
         } else {
@@ -741,6 +824,7 @@ class Helpers
                     "icon" : "new",
                     "sound": "notification.wav",
                     "android_channel_id": "6ammart"
+                    '.$click_action.'
                   }
             }';
         }
@@ -849,6 +933,33 @@ class Helpers
         }
         return $lowest_price . ' - ' . $highest_price;
     }
+    public static function get_food_price_range($product, $discount = false)
+    {
+        $lowest_price = $product->price;
+        // $highest_price = $product->price;
+        // if ($product->variations && is_array(json_decode($product['variations'], true))) {
+        //     foreach (json_decode($product->variations) as $key => $variation) {
+        //         if ($lowest_price > $variation->price) {
+        //             $lowest_price = round($variation->price, 2);
+        //         }
+        //         if ($highest_price < $variation->price) {
+        //             $highest_price = round($variation->price, 2);
+        //         }
+        //     }
+        // }
+
+        if ($discount) {
+            $lowest_price -= self::product_discount_calculate($product, $lowest_price, $product->store);
+            // $highest_price -= self::product_discount_calculate($product, $highest_price, $product->store);
+        }
+        $lowest_price = self::format_currency($lowest_price);
+        // $highest_price = self::format_currency($highest_price);
+
+        // if ($lowest_price == $highest_price) {
+        //     return $lowest_price;
+        // }
+        return $lowest_price;
+    }
 
     public static function get_store_discount($store)
     {
@@ -906,48 +1017,163 @@ class Helpers
         return $max;
     }
 
-    public static function order_status_update_message($status)
+    // public static function order_status_update_message($status)
+    // {
+    //     if ($status == 'pending') {
+    //         $data = BusinessSetting::where('key', 'order_pending_message')->first()->value;
+    //     } elseif ($status == 'confirmed') {
+    //         $data = BusinessSetting::where('key', 'order_confirmation_msg')->first()->value;
+    //     } elseif ($status == 'processing') {
+    //         $data = BusinessSetting::where('key', 'order_processing_message')->first()->value;
+    //     } elseif ($status == 'picked_up') {
+    //         $data = BusinessSetting::where('key', 'out_for_delivery_message')->first()->value;
+    //     } elseif ($status == 'handover') {
+    //         $data = BusinessSetting::where('key', 'order_handover_message')->first()->value;
+    //     } elseif ($status == 'delivered') {
+    //         $data = BusinessSetting::where('key', 'order_delivered_message')->first()->value;
+    //     } elseif ($status == 'delivery_boy_delivered') {
+    //         $data = BusinessSetting::where('key', 'delivery_boy_delivered_message')->first()->value;
+    //     } elseif ($status == 'accepted') {
+    //         $data = BusinessSetting::where('key', 'delivery_boy_assign_message')->first()->value;
+    //     } elseif ($status == 'canceled') {
+    //         $data = BusinessSetting::where('key', 'order_cancled_message')->first()->value;
+    //     } elseif ($status == 'refunded') {
+    //         $data = BusinessSetting::where('key', 'order_refunded_message')->first()->value;
+    //     }elseif ($status == 'refund_request_canceled') {
+    //         $data = BusinessSetting::where('key', 'refund_request_canceled')->first()->value;
+    //     } else {
+    //         $data = '{"status":"0","message":""}';
+    //     }
+
+    //     $res = json_decode($data, true);
+
+    //     if ($res['status'] == 0) {
+    //         return 0;
+    //     }
+    //     return $res['message'];
+    // }
+    // public static function order_status_update_message($status , $module_type)
+    // {
+    //     if ($status == 'pending') {
+    //         $data = NotificationMessage::where('module_type',$module_type)->where('key', 'order_pending_message')->first();
+    //     } elseif ($status == 'confirmed') {
+    //         $data = NotificationMessage::where('module_type',$module_type)->where('key', 'order_confirmation_msg')->first();
+    //     } elseif ($status == 'processing') {
+    //         $data = NotificationMessage::where('module_type',$module_type)->where('key', 'order_processing_message')->first();
+    //     } elseif ($status == 'picked_up') {
+    //         $data = NotificationMessage::where('module_type',$module_type)->where('key', 'out_for_delivery_message')->first();
+    //     } elseif ($status == 'handover') {
+    //         $data = NotificationMessage::where('module_type',$module_type)->where('key', 'order_handover_message')->first();
+    //     } elseif ($status == 'delivered') {
+    //         $data = NotificationMessage::where('module_type',$module_type)->where('key', 'order_delivered_message')->first();
+    //     } elseif ($status == 'delivery_boy_delivered') {
+    //         $data = NotificationMessage::where('module_type',$module_type)->where('key', 'delivery_boy_delivered_message')->first();
+    //     } elseif ($status == 'accepted') {
+    //         $data = NotificationMessage::where('module_type',$module_type)->where('key', 'delivery_boy_assign_message')->first();
+    //     } elseif ($status == 'canceled') {
+    //         $data = NotificationMessage::where('module_type',$module_type)->where('key', 'order_cancled_message')->first();
+    //     } elseif ($status == 'refunded') {
+    //         $data = NotificationMessage::where('module_type',$module_type)->where('key', 'order_refunded_message')->first();
+    //     }elseif ($status == 'refund_request_canceled') {
+    //         $data = NotificationMessage::where('module_type',$module_type)->where('key', 'refund_request_canceled')->first();
+    //     } else {
+    //         $data = '{"status":"0","message":""}';
+    //     }
+
+    //     $res = $data;
+
+    //     if($res){
+    //         if ($res['status'] == 0) {
+    //             return 0;
+    //         }
+    //         return $res['message'];
+    //     }else{
+    //         return true;
+    //     }
+
+    // }
+
+    public static function order_status_update_message($status,$module_type, $lang='en')
     {
         if ($status == 'pending') {
-            $data = BusinessSetting::where('key', 'order_pending_message')->first()->value;
+            $data = NotificationMessage::with(['translations'=>function($query)use($lang){
+                $query->where('locale', $lang);
+            }])->where('module_type',$module_type)->where('key', 'order_pending_message')->first();
         } elseif ($status == 'confirmed') {
-            $data = BusinessSetting::where('key', 'order_confirmation_msg')->first()->value;
+            $data =  NotificationMessage::with(['translations'=>function($query)use($lang){
+                $query->where('locale', $lang);
+            }])->where('module_type',$module_type)->where('key', 'order_confirmation_msg')->first();
         } elseif ($status == 'processing') {
-            $data = BusinessSetting::where('key', 'order_processing_message')->first()->value;
+            $data = NotificationMessage::with(['translations'=>function($query)use($lang){
+                $query->where('locale', $lang);
+            }])->where('module_type',$module_type)->where('key', 'order_processing_message')->first();
         } elseif ($status == 'picked_up') {
-            $data = BusinessSetting::where('key', 'out_for_delivery_message')->first()->value;
+            $data = NotificationMessage::with(['translations'=>function($query)use($lang){
+                $query->where('locale', $lang);
+            }])->where('module_type',$module_type)->where('key', 'out_for_delivery_message')->first();
         } elseif ($status == 'handover') {
-            $data = BusinessSetting::where('key', 'order_handover_message')->first()->value;
+            $data = NotificationMessage::with(['translations'=>function($query)use($lang){
+                $query->where('locale', $lang);
+            }])->where('module_type',$module_type)->where('key', 'order_handover_message')->first();
         } elseif ($status == 'delivered') {
-            $data = BusinessSetting::where('key', 'order_delivered_message')->first()->value;
+            $data = NotificationMessage::with(['translations'=>function($query)use($lang){
+                $query->where('locale', $lang);
+            }])->where('module_type',$module_type)->where('key', 'order_delivered_message')->first();
         } elseif ($status == 'delivery_boy_delivered') {
-            $data = BusinessSetting::where('key', 'delivery_boy_delivered_message')->first()->value;
+            $data = NotificationMessage::with(['translations'=>function($query)use($lang){
+                $query->where('locale', $lang);
+            }])->where('module_type',$module_type)->where('key', 'delivery_boy_delivered_message')->first();
         } elseif ($status == 'accepted') {
-            $data = BusinessSetting::where('key', 'delivery_boy_assign_message')->first()->value;
+            $data = NotificationMessage::with(['translations'=>function($query)use($lang){
+                $query->where('locale', $lang);
+            }])->where('module_type',$module_type)->where('key', 'delivery_boy_assign_message')->first();
         } elseif ($status == 'canceled') {
-            $data = BusinessSetting::where('key', 'order_cancled_message')->first()->value;
+            $data = NotificationMessage::with(['translations'=>function($query)use($lang){
+                $query->where('locale', $lang);
+            }])->where('module_type',$module_type)->where('key', 'order_cancled_message')->first();
         } elseif ($status == 'refunded') {
-            $data = BusinessSetting::where('key', 'order_refunded_message')->first()->value;
-        }elseif ($status == 'refund_request_canceled') {
-            $data = BusinessSetting::where('key', 'refund_request_canceled')->first()->value;
+            $data = NotificationMessage::with(['translations'=>function($query)use($lang){
+                $query->where('locale', $lang);
+            }])->where('module_type',$module_type)->where('key', 'order_refunded_message')->first();
+        } elseif ($status == 'refund_request_canceled') {
+            $data = NotificationMessage::with(['translations'=>function($query)use($lang){
+                $query->where('locale', $lang);
+            }])->where('module_type',$module_type)->where('key', 'refund_request_canceled')->first();
         } else {
-            $data = '{"status":"0","message":""}';
+            $data = ["status"=>"0","message"=>"",'translations'=>[]];
         }
 
-        $res = json_decode($data, true);
-
-        if ($res['status'] == 0) {
-            return 0;
+        if($data){
+            if ($data['status'] == 0) {
+                return 0;
+            }
+            return count($data->translations) > 0 ? $data->translations[0]->value : $data['message'];
+        }else{
+            return false;
         }
-        return $res['message'];
     }
 
     public static function send_order_notification($order)
     {
 
         try {
+
+            if(($order->payment_method == 'cash_on_delivery' && $order->order_status == 'pending' )||($order->payment_method != 'cash_on_delivery' && $order->order_status == 'confirmed' )){
+                $data = [
+                    'title' => translate('messages.order_push_title'),
+                    'description' => translate('messages.new_order_push_description'),
+                    'order_id' => $order->id,
+                    'image' => '',
+                    'module_id' => $order->module_id,
+                    'order_type' => $order->order_type,
+                    'type' => 'new_order',
+                ];
+                self::send_push_notif_to_topic($data, 'admin_message', 'order_request', url('/').'/admin/order/list/all');
+            }
+
             $status = ($order->order_status == 'delivered' && $order->delivery_man) ? 'delivery_boy_delivered' : $order->order_status;
-            $value = self::order_status_update_message($status);
+            $value = self::order_status_update_message($status,$order->module->module_type,$order->customer?
+            $order->customer->current_language_key:'en');
             if ($value) {
                 $data = [
                     'title' => translate('messages.order_push_title'),
@@ -973,13 +1199,15 @@ class Helpers
                     'image' => '',
                     'type' => 'order_status',
                 ];
-                self::send_push_notif_to_device($order->store->vendor->firebase_token, $data);
-                DB::table('user_notifications')->insert([
-                    'data' => json_encode($data),
-                    'vendor_id' => $order->store->vendor_id,
-                    'created_at' => now(),
-                    'updated_at' => now()
-                ]);
+                if($order->store && $order->store->vendor){
+                    self::send_push_notif_to_device($order->store->vendor->firebase_token, $data);
+                    DB::table('user_notifications')->insert([
+                        'data' => json_encode($data),
+                        'vendor_id' => $order->store->vendor_id,
+                        'created_at' => now(),
+                        'updated_at' => now()
+                    ]);
+                }
             }
 
             if ($order->order_type == 'delivery' && !$order->scheduled && $status == 'pending' && $order->payment_method == 'cash_on_delivery' && config('order_confirmation_model') == 'deliveryman') {
@@ -988,25 +1216,39 @@ class Helpers
                         'title' => translate('messages.order_push_title'),
                         'description' => translate('messages.new_order_push_description'),
                         'order_id' => $order->id,
+                        'module_id' => $order->module_id,
+                        'order_type' => $order->order_type,
                         'image' => '',
                         'type' => 'new_order',
                     ];
-                    self::send_push_notif_to_device($order->store->vendor->firebase_token, $data);
-                    DB::table('user_notifications')->insert([
-                        'data' => json_encode($data),
-                        'vendor_id' => $order->store->vendor_id,
-                        'created_at' => now(),
-                        'updated_at' => now()
-                    ]);
+                    if($order->store && $order->store->vendor){
+                        self::send_push_notif_to_device($order->store->vendor->firebase_token, $data);
+                        $web_push_link = url('/').'/store-panel/order/list/all';
+                        self::send_push_notif_to_topic($data, "store_panel_{$order->store_id}_message", 'new_order', $web_push_link);
+                        DB::table('user_notifications')->insert([
+                            'data' => json_encode($data),
+                            'vendor_id' => $order->store->vendor_id,
+                            'module_id' => $order->module_id,
+                            'order_type' => $order->order_type,
+                            'created_at' => now(),
+                            'updated_at' => now()
+                        ]);
+                    }
                 } else {
                     $data = [
                         'title' => translate('messages.order_push_title'),
                         'description' => translate('messages.new_order_push_description'),
                         'order_id' => $order->id,
+                        'module_id' => $order->module_id,
+                        'order_type' => $order->order_type,
                         'image' => '',
                     ];
-                    self::send_push_notif_to_topic($data, $order->zone->deliveryman_wise_topic, 'order_request');
+                    if($order->zone){
+
+                        self::send_push_notif_to_topic($data, $order->zone->deliveryman_wise_topic, 'order_request');
+                    }
                 }
+                // self::send_push_notif_to_topic($data, 'admin_message', 'order_request', url('/').'/admin/order/list/all');
             }
 
             if ($order->order_type == 'parcel' && in_array($order->order_status, ['pending', 'confirmed'])) {
@@ -1014,9 +1256,15 @@ class Helpers
                     'title' => translate('messages.order_push_title'),
                     'description' => translate('messages.new_order_push_description'),
                     'order_id' => $order->id,
+                    'module_id' => $order->module_id,
+                    'order_type' => 'parcel_order',
                     'image' => '',
                 ];
-                self::send_push_notif_to_topic($data, $order->zone->deliveryman_wise_topic, 'order_request');
+                if($order->zone){
+
+                    self::send_push_notif_to_topic($data, $order->zone->deliveryman_wise_topic, 'order_request');
+                }
+                // self::send_push_notif_to_topic($data, 'admin_message', 'order_request');
             }
 
             if ($order->order_type == 'delivery' && !$order->scheduled && $order->order_status == 'pending' && $order->payment_method == 'cash_on_delivery' && config('order_confirmation_model') == 'store') {
@@ -1024,16 +1272,23 @@ class Helpers
                     'title' => translate('messages.order_push_title'),
                     'description' => translate('messages.new_order_push_description'),
                     'order_id' => $order->id,
+                    'module_id' => $order->module_id,
+                    'order_type' => $order->order_type,
                     'image' => '',
                     'type' => 'new_order',
                 ];
-                self::send_push_notif_to_device($order->store->vendor->firebase_token, $data);
-                DB::table('user_notifications')->insert([
-                    'data' => json_encode($data),
-                    'vendor_id' => $order->store->vendor_id,
-                    'created_at' => now(),
-                    'updated_at' => now()
-                ]);
+                if($order->store && $order->store->vendor){
+                    self::send_push_notif_to_device($order->store->vendor->firebase_token, $data);
+                    $web_push_link = url('/').'/store-panel/order/list/all';
+                    self::send_push_notif_to_topic($data, "store_panel_{$order->store_id}_message", 'new_order', $web_push_link);
+                    // self::send_push_notif_to_topic($data, 'admin_message', 'order_request');
+                    DB::table('user_notifications')->insert([
+                        'data' => json_encode($data),
+                        'vendor_id' => $order->store->vendor_id,
+                        'created_at' => now(),
+                        'updated_at' => now()
+                    ]);
+                }
             }
 
             if (!$order->scheduled && (($order->order_type == 'take_away' && $order->order_status == 'pending') || ($order->payment_method != 'cash_on_delivery' && $order->order_status == 'confirmed'))) {
@@ -1044,34 +1299,10 @@ class Helpers
                     'image' => '',
                     'type' => 'new_order',
                 ];
-                self::send_push_notif_to_device($order->store->vendor->firebase_token, $data);
-                DB::table('user_notifications')->insert([
-                    'data' => json_encode($data),
-                    'vendor_id' => $order->store->vendor_id,
-                    'created_at' => now(),
-                    'updated_at' => now()
-                ]);
-            }
-
-            if ($order->order_status == 'confirmed' && $order->order_type != 'take_away' && config('order_confirmation_model') == 'deliveryman' && $order->payment_method == 'cash_on_delivery') {
-                if ($order->store->self_delivery_system) {
-                    $data = [
-                        'title' => translate('messages.order_push_title'),
-                        'description' => translate('messages.new_order_push_description'),
-                        'order_id' => $order->id,
-                        'image' => '',
-                    ];
-
-                    self::send_push_notif_to_topic($data, "restaurant_dm_" . $order->store_id, 'new_order');
-                } else {
-                    $data = [
-                        'title' => translate('messages.order_push_title'),
-                        'description' => translate('messages.new_order_push_description'),
-                        'order_id' => $order->id,
-                        'image' => '',
-                        'type' => 'new_order',
-                    ];
+                if($order->store && $order->store->vendor){
                     self::send_push_notif_to_device($order->store->vendor->firebase_token, $data);
+                    $web_push_link = url('/').'/store-panel/order/list/all';
+                    self::send_push_notif_to_topic($data, "store_panel_{$order->store_id}_message", 'new_order', $web_push_link);
                     DB::table('user_notifications')->insert([
                         'data' => json_encode($data),
                         'vendor_id' => $order->store->vendor_id,
@@ -1081,17 +1312,58 @@ class Helpers
                 }
             }
 
+            if ($order->order_status == 'confirmed' && $order->order_type != 'take_away' && config('order_confirmation_model') == 'deliveryman' && $order->payment_method == 'cash_on_delivery') {
+                if ($order->store->self_delivery_system) {
+                    $data = [
+                        'title' => translate('messages.order_push_title'),
+                        'description' => translate('messages.new_order_push_description'),
+                        'order_id' => $order->id,
+                        'module_id' => $order->module_id,
+                        'order_type' => $order->order_type,
+                        'image' => '',
+                    ];
+
+                    self::send_push_notif_to_topic($data, "restaurant_dm_" . $order->store_id, 'new_order');
+                } else {
+                    $data = [
+                        'title' => translate('messages.order_push_title'),
+                        'description' => translate('messages.new_order_push_description'),
+                        'order_id' => $order->id,
+                        'module_id' => $order->module_id,
+                        'order_type' => $order->order_type,
+                        'image' => '',
+                        'type' => 'new_order',
+                    ];
+                    if($order->store && $order->store->vendor){
+                        self::send_push_notif_to_device($order->store->vendor->firebase_token, $data);
+                        $web_push_link = url('/').'/store-panel/order/list/all';
+                        self::send_push_notif_to_topic($data, "store_panel_{$order->store_id}_message", 'new_order', $web_push_link);
+                        DB::table('user_notifications')->insert([
+                            'data' => json_encode($data),
+                            'vendor_id' => $order->store->vendor_id,
+                            'created_at' => now(),
+                            'updated_at' => now()
+                        ]);
+                    }
+                }
+            }
+
             if ($order->order_type == 'delivery' && !$order->scheduled && $order->order_status == 'confirmed'  && ($order->payment_method != 'cash_on_delivery' || config('order_confirmation_model') == 'store')) {
                 $data = [
                     'title' => translate('messages.order_push_title'),
                     'description' => translate('messages.new_order_push_description'),
                     'order_id' => $order->id,
+                    'module_id' => $order->module_id,
+                    'order_type' => $order->order_type,
                     'image' => '',
                 ];
                 if ($order->store->self_delivery_system) {
                     self::send_push_notif_to_topic($data, "restaurant_dm_" . $order->store_id, 'order_request');
-                } else {
-                    self::send_push_notif_to_topic($data, $order->zone->deliveryman_wise_topic, 'order_request');
+                } else
+                 {if($order->zone){
+
+                     self::send_push_notif_to_topic($data, $order->zone->deliveryman_wise_topic, 'order_request');
+                 }
                 }
             }
 
@@ -1547,7 +1819,26 @@ class Helpers
     }
     public static function default_lang()
     {
-        return 'es';
+        if (strpos(url()->current(), '/api')) {
+            $lang = App::getLocale();
+        } elseif (session()->has('local')) {
+            $lang = session('local');
+        } else {
+            $data = Helpers::get_business_settings('language');
+            $code = 'en';
+            $direction = 'ltr';
+            foreach ($data as $ln) {
+                if (is_array($ln) && array_key_exists('default', $ln) && $ln['default']) {
+                    $code = $ln['code'];
+                    if (array_key_exists('direction', $ln)) {
+                        $direction = $ln['direction'];
+                    }
+                }
+            }
+            session()->put('local', $code);
+            $lang = $code;
+        }
+        return $lang;
     }
     //Mail Config Check
     public static function remove_invalid_charcaters($str)
@@ -1572,7 +1863,7 @@ class Helpers
     // }
 
     public static function generate_referer_code() {
-        $ref_code = strtoupper(Str::random(8));
+        $ref_code = strtoupper(Str::random(10));
 
         if (self::referer_code_exists($ref_code)) {
             return self::generate_referer_code();
@@ -1608,7 +1899,11 @@ class Helpers
             $suffix = 'T';
         }
 
-        $currency_symbol_position = BusinessSetting::where(['key' => 'currency_symbol_position'])->first()->value;
+        if(!session()->has('currency_symbol_position')){
+            $currency_symbol_position = BusinessSetting::where(['key' => 'currency_symbol_position'])->first()->value;
+            session()->put('currency_symbol_position',$currency_symbol_position);
+        }
+        $currency_symbol_position = session()->get('currency_symbol_position');
 
         return $currency_symbol_position == 'right' ? number_format($n, config('round_up_to_digit')).$suffix . ' ' . self::currency_symbol() : self::currency_symbol() . ' ' . number_format($n, config('round_up_to_digit')).$suffix;
     }
@@ -1650,6 +1945,51 @@ class Helpers
                  translate('messages.module') => $item->module->module_name,
                  translate('messages.status') => $item['status'],
                  translate('messages.priority') => $item['priority'],
+            ];
+        }
+        return $data;
+    }
+
+    public static function export_store_withdraw($collection){
+        $data = [];
+        $status = ['pending','approved','denied'];
+        foreach($collection as $key=>$item){
+            $data[] = [
+                'SL'=>$key+1,
+                 translate('messages.amount') => $item->amount,
+                 translate('messages.store') => isset($item->vendor) ? $item->vendor->stores[0]->name : '',
+                 translate('messages.request_time') => date('Y-m-d '.config('timeformat'),strtotime($item->created_at)),
+                 translate('messages.status') => isset($status[$item->approved])?translate("messages.".$status[$item->approved]):"",
+            ];
+        }
+        return $data;
+    }
+
+    public static function export_account_transaction($collection){
+        $data = [];
+        foreach($collection as $key=>$item){
+            $data[] = [
+                'SL'=>$key+1,
+                 translate('messages.collect_from') => $item->store ? $item->store->name : ($item->deliveryman ? $item->deliveryman->f_name . ' ' . $item->deliveryman->l_name : translate('messages.not_found')),
+                 translate('messages.type') => $item->from_type,
+                 translate('messages.received_at') => $item->created_at->format('Y-m-d '.config('timeformat')),
+                 translate('messages.amount') => $item->amount,
+                 translate('messages.reference') => $item->ref,
+            ];
+        }
+        return $data;
+    }
+
+    public static function export_dm_earning($collection){
+        $data = [];
+        foreach($collection as $key=>$item){
+            $data[] = [
+                'SL'=>$key+1,
+                translate('messages.name') => isset($item->delivery_man) ? $item->delivery_man->f_name.' '.$item->delivery_man->l_name : translate('messages.not_found'),
+                 translate('messages.received_at') => $item->created_at->format('Y-m-d '.config('timeformat')),
+                 translate('messages.amount') => $item->amount,
+                 translate('messages.method') => $item->method,
+                 translate('messages.reference') => $item->ref,
             ];
         }
         return $data;
@@ -1738,16 +2078,25 @@ class Helpers
         foreach($collection as $key=>$item){
             $data[] = [
                 'SL'=>$key+1,
-                 translate('messages.id') => $item['id'],
                  translate('messages.order_id') => $item['order_id'],
-                 translate('messages.total_order_amount') => $item['order_amount'],
-                 translate('messages.store_commission') => $item['store_amount'] - $item['tax'],
-                 translate('messages.admin_commission') => $item['admin_commission'] + $item['admin_expense'] - $item['delivery_fee_comission'],
-                 translate('messages.delivery_fee') => $item['delivery_charge'],
-                 translate('Comission on delivery fee') => $item['delivery_fee_comission'],
-                 translate('messages.vat/tax') => $item['tax'],
+                 translate('messages.store')=>$item->order->store?$item->order->store->name:translate('messages.invalid'),
+                 translate('messages.customer_name')=>$item->order->customer?$item->order->customer['f_name'].' '.$item->order->customer['l_name']:translate('messages.invalid').' '.translate('messages.customer').' '.translate('messages.data'),
+                 translate('total_item_amount')=>\App\CentralLogics\Helpers::format_currency($item->order['order_amount'] - $item->order['dm_tips']-$item->order['delivery_charge'] - $item['tax'] + $item->order['coupon_discount_amount'] + $item->order['store_discount_amount']),
+                 translate('item_discount')=>\App\CentralLogics\Helpers::format_currency($item->order->details->sum('discount_on_item')),
+                 translate('coupon_discount')=>\App\CentralLogics\Helpers::format_currency($item->order['coupon_discount_amount']),
+                 translate('discounted_amount')=>\App\CentralLogics\Helpers::format_currency($item->order['coupon_discount_amount'] + $item->order['store_discount_amount']),
+                 translate('messages.tax')=>\App\CentralLogics\Helpers::format_currency($item->order['total_tax_amount']),
+                 translate('messages.delivery_charge')=>\App\CentralLogics\Helpers::format_currency($item['delivery_charge']),
+                 translate('messages.total_order_amount') => \App\CentralLogics\Helpers::format_currency($item['order_amount']),
+                 translate('messages.admin_discount') => \App\CentralLogics\Helpers::format_currency($item['admin_expense']),
+                 translate('messages.store_discount') => \App\CentralLogics\Helpers::format_currency($item->order['store_discount_amount']),
+                 translate('messages.admin_commission') => \App\CentralLogics\Helpers::format_currency(($item->admin_commission + $item->admin_expense) - $item->delivery_fee_comission),
+                 translate('Comission on delivery fee') => \App\CentralLogics\Helpers::format_currency($item['delivery_fee_comission']),
+                 translate('admin_net_income') => \App\CentralLogics\Helpers::format_currency($item['admin_commission']),
+                 translate('store_net_income') => \App\CentralLogics\Helpers::format_currency($item['store_amount'] - $item['tax']),
                  translate('messages.amount_received_by') => $item['received_by'],
-                 translate('messages.created_at') => $item['created_at']->format('Y/m/d ' . config('timeformat')),
+                 translate('messages.payment_method')=>translate(str_replace('_', ' ', $item->order['payment_method'])),
+                 translate('messages.payment_status') => $item->status ? translate("messages.refunded") : translate("messages.completed"),
             ];
         }
         return $data;
@@ -1762,7 +2111,7 @@ class Helpers
                  translate('messages.id') => $item['id'],
                  translate('messages.type') => $item['type'],
                  translate('messages.amount') => $item['amount'],
-                 translate('messages.order_id') => $item['description'],
+                 translate('messages.order_id') => $item['order_id'],
                  translate('messages.expense_date') =>  $item['created_at']->format('Y/m/d ' . config('timeformat')),
             ];
         }
@@ -1776,9 +2125,14 @@ class Helpers
                 'SL'=>$key+1,
                  translate('messages.id') => $item['id'],
                  translate('messages.name') => $item['name'],
-                 translate('messages.store') => $item->store?$item->store->name : '',
-                 translate('messages.zone') => ($item->store && $item->store->zone) ? $item->store->zone->name:'',
-                 translate('messages.order_count') => $item['orders_count'],
+                 translate('messages.module') =>$item->module ? $item->module->module_name : '',
+                 translate('messages.store') => $item->store ? $item->store->name : '',
+                 translate('messages.order') => $item->orders_count,
+                 translate('messages.price') => \App\CentralLogics\Helpers::format_currency($item->price),
+                 translate('messages.total_amount_sold') => \App\CentralLogics\Helpers::format_currency($item->orders_sum_price),
+                 translate('messages.total_discount_given') => \App\CentralLogics\Helpers::format_currency($item->orders_sum_discount_on_item),
+                 translate('messages.average_sale_value') => $item->orders_count>0? \App\CentralLogics\Helpers::format_currency(($item->orders_sum_price-$item->orders_sum_discount_on_item)/$item->orders_count):0 ,
+                 translate('messages.average_ratings') => round($item->avg_rating,1),
             ];
         }
         return $data;
@@ -1822,14 +2176,428 @@ class Helpers
         return $output;
     }
 
-    public static function expenseCreate($amount,$type,$datetime,$description='')
+    public static function expenseCreate($amount,$type,$datetime,$order_id,$description='')
     {
         $expense = new Expense();
         $expense->amount = $amount;
+        $expense->order_id = $order_id;
         $expense->type = $type;
         $expense->description = $description;
         $expense->created_at = $datetime;
         $expense->updated_at = $datetime;
         return $expense->save();
+    }
+
+    public static function get_varient(array $product_variations, array $variations)
+    {
+        $result = [];
+        $variation_price = 0;
+
+        foreach($variations as $k=> $variation){
+            foreach($product_variations as  $product_variation){
+                if( isset($variation['values']) && isset($product_variation['values']) && $product_variation['name'] == $variation['name']  ){
+                    $result[$k] = $product_variation;
+                    $result[$k]['values'] = [];
+                    foreach($product_variation['values'] as $key=> $option){
+                        if(in_array($option['label'], $variation['values']['label'])){
+                            $result[$k]['values'][] = $option;
+                            $variation_price += $option['optionPrice'];
+                        }
+                    }
+                }
+            }
+        }
+
+        return ['price'=>$variation_price,'variations'=>$result];
+    }
+
+    public static function food_variation_price($product, $variations)
+    {
+        // $match = json_decode($variations, true)[0];
+        $match = $variations;
+        $result = 0;
+        // foreach (json_decode($product['variations'], true) as $property => $value) {
+        //     if ($value['type'] == $match['type']) {
+        //         $result = $value['price'];
+        //     }
+        // }
+            foreach($product as $product_variation){
+                foreach($product_variation['values'] as $option){
+                    foreach($match as $variation){
+                        if($product_variation['name'] == $variation['name'] && isset($variation['values']) && in_array($option['label'], $variation['values']['label'])){
+                            $result += $option['optionPrice'];
+                        }
+                    }
+                }
+            }
+
+        return $result;
+    }
+
+    public static function gen_mpdf($view, $file_prefix, $file_postfix)
+    {
+        $mpdf = new \Mpdf\Mpdf(['tempDir' => __DIR__ . '/../../storage/tmp','default_font' => 'FreeSerif', 'mode' => 'utf-8', 'format' => [190, 250]]);
+        /* $mpdf->AddPage('XL', '', '', '', '', 10, 10, 10, '10', '270', '');*/
+        $mpdf->autoScriptToLang = true;
+        $mpdf->autoLangToFont = true;
+
+        $mpdf_view = $view;
+        $mpdf_view = $mpdf_view->render();
+        $mpdf->WriteHTML($mpdf_view);
+        $mpdf->Output($file_prefix . $file_postfix . '.pdf', 'D');
+    }
+
+    public static function auto_translator($q, $sl, $tl)
+    {
+        $res = file_get_contents("https://translate.googleapis.com/translate_a/single?client=gtx&ie=UTF-8&oe=UTF-8&dt=bd&dt=ex&dt=ld&dt=md&dt=qca&dt=rw&dt=rm&dt=ss&dt=t&dt=at&sl=" . $sl . "&tl=" . $tl . "&hl=hl&q=" . urlencode($q), $_SERVER['DOCUMENT_ROOT'] . "/transes.html");
+        $res = json_decode($res);
+        return str_replace('_',' ',$res[0][0][0]);
+    }
+
+    public static function getLanguageCode(string $country_code): string
+    {
+        $locales = array(
+            'en-English(default)',
+            'af-Afrikaans',
+            'sq-Albanian - shqip',
+            'am-Amharic - አማርኛ',
+            'ar-Arabic - العربية',
+            'an-Aragonese - aragonés',
+            'hy-Armenian - հայերեն',
+            'ast-Asturian - asturianu',
+            'az-Azerbaijani - azərbaycan dili',
+            'eu-Basque - euskara',
+            'be-Belarusian - беларуская',
+            'bn-Bengali - বাংলা',
+            'bs-Bosnian - bosanski',
+            'br-Breton - brezhoneg',
+            'bg-Bulgarian - български',
+            'ca-Catalan - català',
+            'ckb-Central Kurdish - کوردی (دەستنوسی عەرەبی)',
+            'zh-Chinese - 中文',
+            'zh-HK-Chinese (Hong Kong) - 中文（香港）',
+            'zh-CN-Chinese (Simplified) - 中文（简体）',
+            'zh-TW-Chinese (Traditional) - 中文（繁體）',
+            'co-Corsican',
+            'hr-Croatian - hrvatski',
+            'cs-Czech - čeština',
+            'da-Danish - dansk',
+            'nl-Dutch - Nederlands',
+            'en-AU-English (Australia)',
+            'en-CA-English (Canada)',
+            'en-IN-English (India)',
+            'en-NZ-English (New Zealand)',
+            'en-ZA-English (South Africa)',
+            'en-GB-English (United Kingdom)',
+            'en-US-English (United States)',
+            'eo-Esperanto - esperanto',
+            'et-Estonian - eesti',
+            'fo-Faroese - føroyskt',
+            'fil-Filipino',
+            'fi-Finnish - suomi',
+            'fr-French - français',
+            'fr-CA-French (Canada) - français (Canada)',
+            'fr-FR-French (France) - français (France)',
+            'fr-CH-French (Switzerland) - français (Suisse)',
+            'gl-Galician - galego',
+            'ka-Georgian - ქართული',
+            'de-German - Deutsch',
+            'de-AT-German (Austria) - Deutsch (Österreich)',
+            'de-DE-German (Germany) - Deutsch (Deutschland)',
+            'de-LI-German (Liechtenstein) - Deutsch (Liechtenstein)
+            ',
+            'de-CH-German (Switzerland) - Deutsch (Schweiz)',
+            'el-Greek - Ελληνικά',
+            'gn-Guarani',
+            'gu-Gujarati - ગુજરાતી',
+            'ha-Hausa',
+            'haw-Hawaiian - ʻŌlelo Hawaiʻi',
+            'he-Hebrew - עברית',
+            'hi-Hindi - हिन्दी',
+            'hu-Hungarian - magyar',
+            'is-Icelandic - íslenska',
+            'id-Indonesian - Indonesia',
+            'ia-Interlingua',
+            'ga-Irish - Gaeilge',
+            'it-Italian - italiano',
+            'it-IT-Italian (Italy) - italiano (Italia)',
+            'it-CH-Italian (Switzerland) - italiano (Svizzera)',
+            'ja-Japanese - 日本語',
+            'kn-Kannada - ಕನ್ನಡ',
+            'kk-Kazakh - қазақ тілі',
+            'km-Khmer - ខ្មែរ',
+            'ko-Korean - 한국어',
+            'ku-Kurdish - Kurdî',
+            'ky-Kyrgyz - кыргызча',
+            'lo-Lao - ລາວ',
+            'la-Latin',
+            'lv-Latvian - latviešu',
+            'ln-Lingala - lingála',
+            'lt-Lithuanian - lietuvių',
+            'mk-Macedonian - македонски',
+            'ms-Malay - Bahasa Melayu',
+            'ml-Malayalam - മലയാളം',
+            'mt-Maltese - Malti',
+            'mr-Marathi - मराठी',
+            'mn-Mongolian - монгол',
+            'ne-Nepali - नेपाली',
+            'no-Norwegian - norsk',
+            'nb-Norwegian Bokmål - norsk bokmål',
+            'nn-Norwegian Nynorsk - nynorsk',
+            'oc-Occitan',
+            'or-Oriya - ଓଡ଼ିଆ',
+            'om-Oromo - Oromoo',
+            'ps-Pashto - پښتو',
+            'fa-Persian - فارسی',
+            'pl-Polish - polski',
+            'pt-Portuguese - português',
+            'pt-BR-Portuguese (Brazil) - português (Brasil)',
+            'pt-PT-Portuguese (Portugal) - português (Portugal)',
+            'pa-Punjabi - ਪੰਜਾਬੀ',
+            'qu-Quechua',
+            'ro-Romanian - română',
+            'mo-Romanian (Moldova) - română (Moldova)',
+            'rm-Romansh - rumantsch',
+            'ru-Russian - русский',
+            'gd-Scottish Gaelic',
+            'sr-Serbian - српски',
+            'sh-Serbo-Croatian - Srpskohrvatski',
+            'sn-Shona - chiShona',
+            'sd-Sindhi',
+            'si-Sinhala - සිංහල',
+            'sk-Slovak - slovenčina',
+            'sl-Slovenian - slovenščina',
+            'so-Somali - Soomaali',
+            'st-Southern Sotho',
+            'es-Spanish - español',
+            'es-AR-Spanish (Argentina) - español (Argentina)',
+            'es-419-Spanish (Latin America) - español (Latinoamérica)
+            ',
+            'es-MX-Spanish (Mexico) - español (México)',
+            'es-ES-Spanish (Spain) - español (España)',
+            'es-US-Spanish (United States) - español (Estados Unidos)
+            ',
+            'su-Sundanese',
+            'sw-Swahili - Kiswahili',
+            'sv-Swedish - svenska',
+            'tg-Tajik - тоҷикӣ',
+            'ta-Tamil - தமிழ்',
+            'tt-Tatar',
+            'te-Telugu - తెలుగు',
+            'th-Thai - ไทย',
+            'ti-Tigrinya - ትግርኛ',
+            'to-Tongan - lea fakatonga',
+            'tr-Turkish - Türkçe',
+            'tk-Turkmen',
+            'tw-Twi',
+            'uk-Ukrainian - українська',
+            'ur-Urdu - اردو',
+            'ug-Uyghur',
+            'uz-Uzbek - o‘zbek',
+            'vi-Vietnamese - Tiếng Việt',
+            'wa-Walloon - wa',
+            'cy-Welsh - Cymraeg',
+            'fy-Western Frisian',
+            'xh-Xhosa',
+            'yi-Yiddish',
+            'yo-Yoruba - Èdè Yorùbá',
+            'zu-Zulu - isiZulu',
+        );
+
+        foreach ($locales as $locale) {
+            $locale_region = explode('-',$locale);
+            if (strtoupper($country_code) == $locale_region[1]) {
+                return $locale_region[0];
+            }
+        }
+
+        return "en";
+    }
+    // function getLanguageCode(string $country_code): string
+    // {
+    //     $locales = array('af-ZA',
+    //         'am-ET',
+    //         'ar-AE',
+    //         'ar-BH',
+    //         'ar-DZ',
+    //         'ar-EG',
+    //         'ar-IQ',
+    //         'ar-JO',
+    //         'ar-KW',
+    //         'ar-LB',
+    //         'ar-LY',
+    //         'ar-MA',
+    //         'ar-OM',
+    //         'ar-QA',
+    //         'ar-SA',
+    //         'ar-SY',
+    //         'ar-TN',
+    //         'ar-YE',
+    //         'az-Cyrl-AZ',
+    //         'az-Latn-AZ',
+    //         'be-BY',
+    //         'bg-BG',
+    //         'bn-BD',
+    //         'bs-Cyrl-BA',
+    //         'bs-Latn-BA',
+    //         'cs-CZ',
+    //         'da-DK',
+    //         'de-AT',
+    //         'de-CH',
+    //         'de-DE',
+    //         'de-LI',
+    //         'de-LU',
+    //         'dv-MV',
+    //         'el-GR',
+    //         'en-AU',
+    //         'en-BZ',
+    //         'en-CA',
+    //         'en-GB',
+    //         'en-IE',
+    //         'en-JM',
+    //         'en-MY',
+    //         'en-NZ',
+    //         'en-SG',
+    //         'en-TT',
+    //         'en-US',
+    //         'en-ZA',
+    //         'en-ZW',
+    //         'es-AR',
+    //         'es-BO',
+    //         'es-CL',
+    //         'es-CO',
+    //         'es-CR',
+    //         'es-DO',
+    //         'es-EC',
+    //         'es-ES',
+    //         'es-GT',
+    //         'es-HN',
+    //         'es-MX',
+    //         'es-NI',
+    //         'es-PA',
+    //         'es-PE',
+    //         'es-PR',
+    //         'es-PY',
+    //         'es-SV',
+    //         'es-US',
+    //         'es-UY',
+    //         'es-VE',
+    //         'et-EE',
+    //         'fa-IR',
+    //         'fi-FI',
+    //         'fil-PH',
+    //         'fo-FO',
+    //         'fr-BE',
+    //         'fr-CA',
+    //         'fr-CH',
+    //         'fr-FR',
+    //         'fr-LU',
+    //         'fr-MC',
+    //         'he-IL',
+    //         'hi-IN',
+    //         'hr-BA',
+    //         'hr-HR',
+    //         'hu-HU',
+    //         'hy-AM',
+    //         'id-ID',
+    //         'ig-NG',
+    //         'is-IS',
+    //         'it-CH',
+    //         'it-IT',
+    //         'ja-JP',
+    //         'ka-GE',
+    //         'kk-KZ',
+    //         'kl-GL',
+    //         'km-KH',
+    //         'ko-KR',
+    //         'ky-KG',
+    //         'lb-LU',
+    //         'lo-LA',
+    //         'lt-LT',
+    //         'lv-LV',
+    //         'mi-NZ',
+    //         'mk-MK',
+    //         'mn-MN',
+    //         'ms-BN',
+    //         'ms-MY',
+    //         'mt-MT',
+    //         'nb-NO',
+    //         'ne-NP',
+    //         'nl-BE',
+    //         'nl-NL',
+    //         'pl-PL',
+    //         'prs-AF',
+    //         'ps-AF',
+    //         'pt-BR',
+    //         'pt-PT',
+    //         'ro-RO',
+    //         'ru-RU',
+    //         'rw-RW',
+    //         'sv-SE',
+    //         'si-LK',
+    //         'sk-SK',
+    //         'sl-SI',
+    //         'sq-AL',
+    //         'sr-Cyrl-BA',
+    //         'sr-Cyrl-CS',
+    //         'sr-Cyrl-ME',
+    //         'sr-Cyrl-RS',
+    //         'sr-Latn-BA',
+    //         'sr-Latn-CS',
+    //         'sr-Latn-ME',
+    //         'sr-Latn-RS',
+    //         'sw-KE',
+    //         'tg-Cyrl-TJ',
+    //         'th-TH',
+    //         'tk-TM',
+    //         'tr-TR',
+    //         'uk-UA',
+    //         'ur-PK',
+    //         'uz-Cyrl-UZ',
+    //         'uz-Latn-UZ',
+    //         'vi-VN',
+    //         'wo-SN',
+    //         'yo-NG',
+    //         'zh-CN',
+    //         'zh-HK',
+    //         'zh-MO',
+    //         'zh-SG',
+    //         'zh-TW');
+
+    //     foreach ($locales as $locale) {
+    //         $locale_region = explode('-',$locale);
+    //         if (strtoupper($country_code) == $locale_region[1]) {
+    //             return $locale_region[0];
+    //         }
+    //     }
+
+    //     return "en";
+    // }
+
+    public static function pagination_limit()
+    {
+        $pagination_limit = BusinessSetting::where('key', 'pagination_limit')->first();
+        if ($pagination_limit != null) {
+            return $pagination_limit->value;
+        } else {
+            return 25;
+        }
+    }
+
+    public static function language_load()
+    {
+        if (\session()->has('language_settings')) {
+            $language = \session('language_settings');
+        } else {
+            $language = BusinessSetting::where('key', 'system_language')->first();
+            \session()->put('language_settings', $language);
+        }
+        return $language;
+    }
+
+
+    public static function product_tax($price , $tax, $is_include=false){
+        $price_tax = ($price * $tax) / (100 + ($is_include?$tax:0)) ;
+        return $price_tax;
     }
 }

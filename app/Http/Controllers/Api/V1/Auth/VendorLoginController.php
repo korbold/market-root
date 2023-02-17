@@ -12,6 +12,7 @@ use Illuminate\Support\Str;
 use App\Models\Zone;
 use App\Models\Store;
 use App\CentralLogics\StoreLogic;
+use App\Models\VendorEmployee;
 use Grimzy\LaravelMysqlSpatial\Types\Point;
 use Illuminate\Support\Facades\Mail;
 
@@ -27,26 +28,59 @@ class VendorLoginController extends Controller
         if ($validator->fails()) {
             return response()->json(['errors' => Helpers::error_processor($validator)], 403);
         }
+        $vendor_type= $request->vendor_type;
 
         $data = [
             'email' => $request->email,
             'password' => $request->password
         ];
 
-        if (auth('vendor')->attempt($data)) {
-            $token = $this->genarate_token($request['email']);
-            $vendor = Vendor::where(['email' => $request['email']])->first();
-            if(!$vendor->stores[0]->status)
-            {
+        if($vendor_type == 'owner'){
+            if (auth('vendor')->attempt($data)) {
+                $token = $this->genarate_token($request['email']);
+                $vendor = Vendor::where(['email' => $request['email']])->first();
+                if(!$vendor->stores[0]->status)
+                {
+                    return response()->json([
+                        'errors' => [
+                            ['code' => 'auth-002', 'message' => translate('messages.inactive_vendor_warning')]
+                        ]
+                    ], 403);
+                }
+                $vendor->auth_token = $token;
+                $vendor->save();
+                return response()->json(['token' => $token, 'zone_wise_topic'=> $vendor->stores[0]->zone->store_wise_topic], 200);
+            }  else {
+                $errors = [];
+                array_push($errors, ['code' => 'auth-001', 'message' => 'Unauthorized.']);
                 return response()->json([
-                    'errors' => [
-                        ['code' => 'auth-002', 'message' => translate('messages.inactive_vendor_warning')]
-                    ]
-                ], 403);
+                    'errors' => $errors
+                ], 401);
             }
-            $vendor->auth_token = $token;
-            $vendor->save();
-            return response()->json(['token' => $token, 'zone_wise_topic'=> $vendor->stores[0]->zone->store_wise_topic], 200);
+        }elseif($vendor_type == 'employee'){
+
+            if (auth('vendor_employee')->attempt($data)) {
+                $token = $this->genarate_token($request['email']);
+                $vendor = VendorEmployee::where(['email' => $request['email']])->first();
+                if($vendor->store->status == 0)
+                {
+                    return response()->json([
+                        'errors' => [
+                            ['code' => 'auth-002', 'message' => translate('messages.inactive_vendor_warning')]
+                        ]
+                    ], 403);
+                }
+                $vendor->auth_token = $token;
+                $vendor->save();
+                $role = $vendor->role ? json_decode($vendor->role->modules):[];
+                return response()->json(['token' => $token, 'zone_wise_topic'=> $vendor->store->zone->store_wise_topic, 'role'=>$role], 200);
+            } else {
+                $errors = [];
+                array_push($errors, ['code' => 'auth-001', 'message' => 'Unauthorized.']);
+                return response()->json([
+                    'errors' => $errors
+                ], 401);
+            }
         } else {
             $errors = [];
             array_push($errors, ['code' => 'auth-001', 'message' => 'Unauthorized.']);
@@ -54,6 +88,7 @@ class VendorLoginController extends Controller
                 'errors' => $errors
             ], 401);
         }
+
     }
 
     private function genarate_token($email)

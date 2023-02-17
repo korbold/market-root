@@ -2,17 +2,22 @@
 
 namespace App\Http\Controllers\Api\V1\Vendor;
 
+use App\CentralLogics\CouponLogic;
 use App\CentralLogics\Helpers;
 use App\CentralLogics\OrderLogic;
 use App\CentralLogics\StoreLogic;
 use App\Http\Controllers\Controller;
+use App\Models\BusinessSetting;
 use App\Models\Vendor;
 use App\Models\Order;
 use App\Models\Notification;
 use App\Models\UserNotification;
 use App\Models\Campaign;
+use App\Models\Coupon;
 use App\Models\WithdrawRequest;
 use App\Models\Item;
+use App\Models\Store;
+use App\Models\VendorEmployee;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -25,7 +30,7 @@ class VendorController extends Controller
     {
         $vendor = $request['vendor'];
         $store = Helpers::store_data_formatting($vendor->stores[0], false);
-        $discount=Helpers::get_store_discount($vendor->stores[0]);
+        $discount=Helpers::get_store_discount($vendor->stores[0]);  
         unset($store['discount']);
         $store['discount']=$discount;
         $store['schedules']=$store->schedules()->get();
@@ -43,6 +48,12 @@ class VendorController extends Controller
         $vendor['this_week_earning'] =(float)$vendor->this_week_earning()->sum('store_amount');
         $vendor['this_month_earning'] =(float)$vendor->this_month_earning()->sum('store_amount');
         $vendor["stores"] = $store;
+        if ($request['vendor_employee']) {
+            $vendor_employee = $request['vendor_employee'];
+            $role = $vendor_employee->role ? json_decode($vendor_employee->role->modules):[];
+            $vendor["roles"] = $role;
+            $vendor["employee_info"] = json_decode($request['vendor_employee']);
+        }
         unset($vendor['orders']);
         unset($vendor['rating']);
         unset($vendor['todaysorders']);
@@ -321,9 +332,23 @@ class VendorController extends Controller
         if(!$order){
             return response()->json(['errors'=>[['code'=>'order_id', 'message'=>trans('messages.order_data_not_found')]]],404);
         }
-        $details = $order->details;
-        $details = Helpers::order_details_data_formatting($details);
-        return response()->json($details, 200);
+        $details = isset($order->details)?$order->details:null;
+        if ($details != null && $details->count() > 0) {
+            $details = $details = Helpers::order_details_data_formatting($details);
+            return response()->json($details, 200);
+        } else if ($order->order_type == 'parcel' || $order->prescription_order == 1) {
+            $order->delivery_address = json_decode($order->delivery_address, true);
+            if($order->prescription_order && $order->order_attachment){
+                $order->order_attachment = json_decode($order->order_attachment, true);
+            }
+            return response()->json(($order), 200);
+        }
+
+        return response()->json([
+            'errors' => [
+                ['code' => 'order', 'message' => translate('messages.not_found')]
+            ]
+        ], 404);
     }
 
     public function get_order(Request $request)
@@ -371,11 +396,25 @@ class VendorController extends Controller
         if ($validator->fails()) {
             return response()->json(['errors' => Helpers::error_processor($validator)], 403);
         }
+        if (!$request->hasHeader('vendorType')) {
+            $errors = [];
+            array_push($errors, ['code' => 'vendor_type', 'message' => translate('messages.vendor_type_required')]);
+            return response()->json([
+                'errors' => $errors
+            ], 403);
+        }
+        $vendor_type= $request->header('vendorType');
         $vendor = $request['vendor'];
+        if($vendor_type == 'owner'){
+            Vendor::where(['id' => $vendor['id']])->update([
+                'firebase_token' => $request['fcm_token']
+            ]);
+        }else{
+            VendorEmployee::where(['id' => $vendor['id']])->update([
+                'firebase_token' => $request['fcm_token']
+            ]);
 
-        Vendor::where(['id' => $vendor['id']])->update([
-            'firebase_token' => $request['fcm_token']
-        ]);
+        }
 
         return response()->json(['message'=>'successfully updated!'], 200);
     }
@@ -488,7 +527,7 @@ class VendorController extends Controller
 
         $type = $request->query('type', 'all');
 
-        $paginator = Item::withoutGlobalScope('translate')->type($type)->where('store_id', $request['vendor']->stores[0]->id)->latest()->paginate($limit, ['*'], 'page', $offset);
+        $paginator = Item::withoutGlobalScope('translate')->with('tags')->type($type)->where('store_id', $request['vendor']->stores[0]->id)->latest()->paginate($limit, ['*'], 'page', $offset);
         $data = [
             'total_size' => $paginator->total(),
             'limit' => $limit,
@@ -623,5 +662,154 @@ class VendorController extends Controller
         }
         $vendor->delete();
         return response()->json([]);
+    }
+    public function edit_order_amount(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'order_id' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => Helpers::error_processor($validator)], 403);
+        }
+
+        if($request->order_amount){
+            $vendor = $request['vendor'];
+            $vendor_store = Helpers::store_data_formatting($vendor->stores[0], false);
+            $order = Order::find($request->order_id);
+            if ($order->store_id != $vendor_store->id) {
+                return response()->json([
+                    'errors' => [
+                        ['code' => 'order', 'message' => translate('Order not found')]
+                    ]
+                ], 403);
+            }
+            $store = Store::find($order->store_id);
+            $coupon = null;
+            $free_delivery_by = null;
+            if ($order->coupon_code) {
+                $coupon = Coupon::active()->where(['code' => $order->coupon_code])->first();
+                if (isset($coupon)) {
+                    $staus = CouponLogic::is_valide($coupon, $order->user_id, $order->store_id);
+                    if ($staus == 407) {
+                        return response()->json([
+                            'errors' => [
+                                ['code' => 'coupon', 'message' => translate('messages.coupon_expire')]
+                            ]
+                        ], 407);
+                    } else if ($staus == 406) {
+                        return response()->json([
+                            'errors' => [
+                                ['code' => 'coupon', 'message' => translate('messages.coupon_usage_limit_over')]
+                            ]
+                        ], 406);
+                    } else if ($staus == 404) {
+                        return response()->json([
+                            'errors' => [
+                                ['code' => 'coupon', 'message' => translate('messages.not_found')]
+                            ]
+                        ], 404);
+                    }
+                } else {
+                    return response()->json([
+                        'errors' => [
+                            ['code' => 'coupon', 'message' => translate('messages.not_found')]
+                        ]
+                    ], 404);
+                }
+            }
+            $product_price = $request->order_amount;
+            $total_addon_price = 0;
+            $store_discount_amount = $order->store_discount_amount;
+            if($store_discount_amount == 0){
+                $store_discount = Helpers::get_store_discount($store);
+                if (isset($store_discount)) {
+                    if ($product_price + $total_addon_price < $store_discount['min_purchase']) {
+                        $store_discount_amount = 0;
+                    }
+        
+                    if ($store_discount['max_discount'] != 0 && $store_discount_amount > $store_discount['max_discount']) {
+                        $store_discount_amount = $store_discount['max_discount'];
+                    }
+                }
+            }
+    
+            $coupon_discount_amount = $coupon ? CouponLogic::get_discount($coupon, $product_price + $total_addon_price - $store_discount_amount) : 0;
+            $total_price = $product_price + $total_addon_price - $store_discount_amount - $coupon_discount_amount;
+    
+            $tax = ($store->tax > 0)?$store->tax:0;
+            $order->tax_status = 'excluded';
+    
+            $tax_included =BusinessSetting::where(['key'=>'tax_included'])->first() ?  BusinessSetting::where(['key'=>'tax_included'])->first()->value : 0;
+            if ($tax_included ==  1){
+                $order->tax_status = 'included';
+            }
+    
+            $total_tax_amount=Helpers::product_tax($total_price,$tax,$order->tax_status =='included');
+    
+            $tax_a=$order->tax_status =='included'?0:$total_tax_amount;
+    
+            $free_delivery_over = BusinessSetting::where('key', 'free_delivery_over')->first()->value;
+            if (isset($free_delivery_over)) {
+                if ($free_delivery_over <= $product_price + $total_addon_price - $coupon_discount_amount - $store_discount_amount) {
+                    $order->delivery_charge = 0;
+                    $free_delivery_by = 'admin';
+                }
+            }
+    
+            if ($store->free_delivery) {
+                $order->delivery_charge = 0;
+                $free_delivery_by = 'vendor';
+            }
+    
+            if ($coupon) {
+                if ($coupon->coupon_type == 'free_delivery') {
+                    if ($coupon->min_purchase <= $product_price + $total_addon_price - $store_discount_amount) {
+                        $order->delivery_charge = 0;
+                        $free_delivery_by = 'admin';
+                    }
+                }
+                $coupon->increment('total_uses');
+            }
+    
+            $order->coupon_discount_amount = round($coupon_discount_amount, config('round_up_to_digit'));
+            $order->coupon_discount_title = $coupon ? $coupon->title : '';
+    
+            $order->store_discount_amount = round($store_discount_amount, config('round_up_to_digit'));
+            $order->total_tax_amount = round($total_tax_amount, config('round_up_to_digit'));
+            $order->order_amount = round($total_price + $tax_a + $order->delivery_charge, config('round_up_to_digit'));
+            $order->free_delivery_by = $free_delivery_by;
+            $order->order_amount = $order->order_amount + $order->dm_tips;
+            $order->save();
+        }
+
+        if($request->discount_amount){
+            $vendor = $request['vendor'];
+            $vendor_store = Helpers::store_data_formatting($vendor->stores[0], false);
+            $order = Order::find($request->order_id);
+            if ($order->store_id != $vendor_store->id) {
+                return response()->json([
+                    'errors' => [
+                        ['code' => 'order', 'message' => translate('Order not found')]
+                    ]
+                ], 403);
+            }
+            $order = Order::find($request->order_id);
+            $product_price = $order['order_amount']-$order['delivery_charge']-$order['total_tax_amount']-$order['dm_tips']+$order->store_discount_amount;
+            if($request->discount_amount > $product_price)
+            {
+                return response()->json([
+                    'errors' => [
+                        ['code' => 'order', 'message' => translate('messages.discount_amount_is_greater_then_product_amount')]
+                    ]
+                ], 403);
+            }
+            $order->store_discount_amount = round($request->discount_amount, config('round_up_to_digit'));
+            $order->order_amount = $product_price+$order['delivery_charge']+$order['total_tax_amount']+$order['dm_tips'] -$order->store_discount_amount;
+            $order->save();
+        }
+
+
+        return response()->json(['message'=>translate('messages.order_updated_successfully')],200);
     }
 }

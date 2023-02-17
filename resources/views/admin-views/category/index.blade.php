@@ -39,7 +39,7 @@
                         </ul>
                     @endif
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-12">
                             @if ($language)
                                 @foreach(json_decode($language) as $lang)
                                     <div class="form-group {{$lang != $default_lang ? 'd-none':''}} lang_form" id="{{$lang}}-form">
@@ -55,7 +55,7 @@
                                 </div>
                                 <input type="hidden" name="lang[]" value="{{$lang}}">
                             @endif
-                            <div class="form-group mb-0 pt-md-4">
+                            {{-- <div class="form-group mb-0 pt-md-4">
                                 <label class="input-label">{{translate('messages.module')}}</label>
                                 <select name="module_id" id="module_id" required class="form-control js-select2-custom"  data-placeholder="{{translate('messages.select')}} {{translate('messages.module')}}">
                                         <option value="" selected disabled>{{translate('messages.select')}} {{translate('messages.module')}}</option>
@@ -64,10 +64,10 @@
                                     @endforeach
                                 </select>
                                 <small class="text-danger">{{translate('messages.module_change_warning')}}</small>
-                            </div>
+                            </div> --}}
                             <input name="position" value="0" class="initial-hidden">
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-12">
                             <div class="h-100 d-flex flex-column">
                                 <label class="m-0">{{translate('messages.image')}} <small class="text-danger">* ( {{translate('messages.ratio')}} 1:1)</small></label>
                                 <center class="py-3 my-auto">
@@ -101,7 +101,7 @@
             <div class="card-header py-2 border-0">
                 <div class="search--button-wrapper">
                     <h5 class="card-title">{{translate('messages.category')}} {{translate('messages.list')}}<span class="badge badge-soft-dark ml-2" id="itemCount">{{$categories->total()}}</span></h5>
-                    <div class="min--240">
+                    {{-- <div class="min--240">
                         <select name="module_id" class="form-control js-select2-custom" onchange="set_filter('{{url()->full()}}',this.value,'module_id')" title="{{translate('messages.select')}} {{translate('messages.modules')}}">
                             <option value="" {{!request('module_id') ? 'selected':''}}>{{translate('messages.all')}} {{translate('messages.modules')}}</option>
                             @foreach (\App\Models\Module::notParcel()->get() as $module)
@@ -111,7 +111,7 @@
                                 </option>
                             @endforeach
                         </select>
-                    </div>
+                    </div> --}}
 
                     <form id="dataSearch" class="search-form">
                         @csrf

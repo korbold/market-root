@@ -26,20 +26,6 @@
                         </span>
                     </h1>
                 </div>
-                <div class="col-xl-2 col-md-3 col-sm-4">
-                    @if (!$parcel_order)
-                    <select name="zone_id" class="form-control js-select2-custom"
-                            onchange="set_filter('{{url()->full()}}',this.value,'module_id')" title="{{translate('messages.select')}} {{translate('messages.modules')}}">
-                        <option value="" {{!request('module_id') ? 'selected':''}}>{{translate('messages.all')}} {{translate('messages.modules')}}</option>
-                        @foreach (\App\Models\Module::notParcel()->get() as $module)
-                            <option
-                                value="{{$module->id}}" {{request('module_id') == $module->id?'selected':''}}>
-                                {{$module['module_name']}}
-                            </option>
-                        @endforeach
-                    </select>
-                    @endif
-                </div>
             </div>
             <!-- End Row -->
         </div>
@@ -537,10 +523,10 @@
                         <input type="checkbox" id="orderStatus5" name="orderStatus[]" class="custom-control-input" value="delivered" {{isset($orderstatus)?(in_array('delivered', $orderstatus)?'checked':''):''}}>
                         <label class="custom-control-label" for="orderStatus5">{{translate('messages.delivered')}}</label>
                     </div>
-                    <div class="custom-control custom-radio mb-2">
+                    {{-- <div class="custom-control custom-radio mb-2">
                         <input type="checkbox" id="orderStatus6" name="orderStatus[]" class="custom-control-input" value="returned" {{isset($orderstatus)?(in_array('returned', $orderstatus)?'checked':''):''}}>
                         <label class="custom-control-label" for="orderStatus6">{{translate('messages.returned')}}</label>
-                    </div>
+                    </div> --}}
                     <div class="custom-control custom-radio mb-2">
                         <input type="checkbox" id="orderStatus7" name="orderStatus[]" class="custom-control-input" value="failed" {{isset($orderstatus)?(in_array('failed', $orderstatus)?'checked':''):''}}>
                         <label class="custom-control-label" for="orderStatus7">{{translate('messages.failed')}}</label>
@@ -549,6 +535,7 @@
                         <input type="checkbox" id="orderStatus8" name="orderStatus[]" class="custom-control-input" value="canceled" {{isset($orderstatus)?(in_array('canceled', $orderstatus)?'checked':''):''}}>
                         <label class="custom-control-label" for="orderStatus8">{{translate('messages.canceled')}}</label>
                     </div>
+                    @if (!$parcel_order)
                     <div class="custom-control custom-radio mb-2">
                         <input type="checkbox" id="orderStatus9" name="orderStatus[]" class="custom-control-input" value="refund_requested" {{isset($orderstatus)?(in_array('refund_requested', $orderstatus)?'checked':''):''}}>
                         <label class="custom-control-label" for="orderStatus9">{{translate('messages.refundRequest')}}</label>
@@ -557,6 +544,7 @@
                         <input type="checkbox" id="orderStatus10" name="orderStatus[]" class="custom-control-input" value="refunded" {{isset($orderstatus)?(in_array('refunded', $orderstatus)?'checked':''):''}}>
                         <label class="custom-control-label" for="orderStatus10">{{translate('messages.refunded')}}</label>
                     </div>
+                    @endif
 
                     <hr class="my-4">
 

@@ -23,13 +23,13 @@
                         <!-- Nav -->
                         <ul class="nav nav-tabs mb-3 border-0 nav--tabs">
                             <li class="nav-item">
-                                <a class="nav-link active" href="{{route('admin.delivery-man.preview', ['id'=>$dm->id, 'tab'=> 'info'])}}"  aria-disabled="true">{{translate('messages.info')}}</a>
+                                <a class="nav-link active" href="{{route('admin.users.delivery-man.preview', ['id'=>$dm->id, 'tab'=> 'info'])}}"  aria-disabled="true">{{translate('messages.info')}}</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="{{route('admin.delivery-man.preview', ['id'=>$dm->id, 'tab'=> 'transaction'])}}"  aria-disabled="true">{{translate('messages.transaction')}}</a>
+                                <a class="nav-link" href="{{route('admin.users.delivery-man.preview', ['id'=>$dm->id, 'tab'=> 'transaction'])}}"  aria-disabled="true">{{translate('messages.transaction')}}</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="{{route('admin.delivery-man.preview', ['id'=>$dm->id, 'tab'=> 'conversation'])}}"  aria-disabled="true">{{translate('messages.conversations')}}</a>
+                                <a class="nav-link" href="{{route('admin.users.delivery-man.preview', ['id'=>$dm->id, 'tab'=> 'conversation'])}}"  aria-disabled="true">{{translate('messages.conversations')}}</a>
                             </li>
                         </ul>
                         <!-- End Nav -->
@@ -39,12 +39,12 @@
                 <div class="col-md-12">
                     <div class="btn--container justify-content-end">
                         <a class="btn btn--primary text-capitalize font-weight-bold"
-                        onclick="request_alert('{{route('admin.delivery-man.application',[$dm['id'],'approved'])}}','{{translate('messages.you_want_to_approve_this_application')}}')"
-                            href="javascript:">{{translate('messages.approve')}}</a>
+                        onclick="request_alert('{{route('admin.users.delivery-man.application',[$dm['id'],'approved'])}}','{{translate('messages.you_want_to_approve_this_application')}}')"
+                            href="javascript:"><i class="tio-checkmark-circle-outlined font-weight-bold pr-1"></i> {{translate('messages.approve')}}</a>
                         @if($dm->application_status !='denied')
                         <a class="btn btn--danger text-capitalize font-weight-bold"
-                        onclick="request_alert('{{route('admin.delivery-man.application',[$dm['id'],'denied'])}}','{{translate('messages.you_want_to_deny_this_application')}}')"
-                            href="javascript:">{{translate('messages.deny')}}</a>
+                        onclick="request_alert('{{route('admin.users.delivery-man.application',[$dm['id'],'denied'])}}','{{translate('messages.you_want_to_deny_this_application')}}')"
+                            href="javascript:"><i class="tio-clear-circle-outlined font-weight-bold pr-1"></i> {{translate('messages.deny')}}</a>
                         @endif
                     </div>
                 </div>
@@ -123,7 +123,7 @@
                         @endif
                     </h4>
                     @if($dm->application_status=='approved')
-                    <a  href="javascript:"  onclick="request_alert('{{route('admin.delivery-man.status',[$dm['id'],$dm->status?0:1])}}','{{$dm->status?translate('messages.you_want_to_suspend_this_deliveryman'):translate('messages.you_want_to_unsuspend_this_deliveryman')}}')" class="btn font-medium {{$dm->status?'btn--danger':'btn-success'}}">
+                    <a  href="javascript:"  onclick="request_alert('{{route('admin.users.delivery-man.status',[$dm['id'],$dm->status?0:1])}}','{{$dm->status?translate('messages.you_want_to_suspend_this_deliveryman'):translate('messages.you_want_to_unsuspend_this_deliveryman')}}')" class="btn font-medium {{$dm->status?'btn--danger':'btn-success'}}">
                             {{$dm->status?translate('messages.suspend_this_delivery_man'):translate('messages.unsuspend_this_delivery_man')}}
                     </a>
                     @endif
@@ -136,10 +136,10 @@
                             </button>
                             <div class="dropdown-menu text-capitalize" aria-labelledby="dropdownMenuButton">
                                 <a class="dropdown-item {{$dm->earning?'active':''}}"
-                                onclick="request_alert('{{route('admin.delivery-man.earning',[$dm['id'],1])}}','{{translate('messages.want_to_enable_earnings')}}')"
+                                onclick="request_alert('{{route('admin.users.delivery-man.earning',[$dm['id'],1])}}','{{translate('messages.want_to_enable_earnings')}}')"
                                     href="javascript:">{{translate('messages.freelancer')}}</a>
                                 <a class="dropdown-item {{$dm->earning?'':'active'}}"
-                                onclick="request_alert('{{route('admin.delivery-man.earning',[$dm['id'],0])}}','{{translate('messages.want_to_disable_earnings')}}')"
+                                onclick="request_alert('{{route('admin.users.delivery-man.earning',[$dm['id'],0])}}','{{translate('messages.want_to_disable_earnings')}}')"
                                     href="javascript:">{{translate('messages.salary_based')}}</a>
                             </div>
                         </div>
@@ -382,7 +382,7 @@
                                     @endif
                                 </td>
                                 <td>
-                                    <a href="{{route('admin.order.details',['id'=>$review->order_id])}}">{{$review->order_id}}</a>
+                                    <a href="{{route('admin.order.all-details',['id'=>$review->order_id])}}">{{$review->order_id}}</a>
                                 </td>
                                 <td>
                                     <div class="text-wrap w-18rem">

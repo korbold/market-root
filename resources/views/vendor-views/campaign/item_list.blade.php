@@ -69,7 +69,7 @@
                                     <td>
                                         <span class="bg-gradient-light text-dark">{{$campaign->start_time?$campaign->start_time->format(config('timeformat')). ' - ' .$campaign->end_time->format(config('timeformat')): 'N/A'}}</span>
                                     </td>
-                                    <td>{{$campaign->price}}</td>
+                                    <td>{{\App\CentralLogics\Helpers::format_currency($campaign->price)}}</td>
                                     {{-- <td>
                                         <label class="toggle-switch toggle-switch-sm" for="campaignCheckbox{{$campaign->id}}">
                                             <input type="checkbox" onclick="location.href='{{route('admin.campaign.status',['item',$campaign['id'],$campaign->status?0:1])}}'"class="toggle-switch-input" id="campaignCheckbox{{$campaign->id}}" {{$campaign->status?'checked':''}}>

@@ -1,5 +1,7 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+@php($site_direction = \App\Models\BusinessSetting::where('key', 'site_direction')->first())
+@php($site_direction = $site_direction->value ?? 'ltr')
+<html dir="{{ $site_direction }}" lang="{{ str_replace('_', '-', app()->getLocale()) }}"  class="{{ $site_direction === 'rtl'?'active':'' }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -25,6 +27,10 @@
 </head>
 
 <body class="footer-offset">
+    {{-- <div class="direction-toggle">
+        <i class="tio-settings"></i>
+        <span></span>
+    </div> --}}
 
 {{--loader--}}
 <div class="container">
@@ -105,6 +111,36 @@
         @endforeach
     </script>
 @endif
+<!-- Toggle Direction Init -->
+{{-- <script>
+    $(document).on('ready', function(){
+
+        $(".direction-toggle").on("click", function () {
+            setDirection(localStorage.getItem("direction"));
+        });
+
+        function setDirection(direction) {
+            if (direction == "rtl") {
+                localStorage.setItem("direction", "ltr");
+                $("html").attr('dir', 'ltr');
+            $(".direction-toggle").find('span').text('Toggle RTL')
+            } else {
+                localStorage.setItem("direction", "rtl");
+                $("html").attr('dir', 'rtl');
+            $(".direction-toggle").find('span').text('Toggle LTR')
+            }
+        }
+
+        if (localStorage.getItem("direction") == "rtl") {
+            $("html").attr('dir', "rtl");
+            $(".direction-toggle").find('span').text('Toggle LTR')
+        } else {
+            $("html").attr('dir', "ltr");
+            $(".direction-toggle").find('span').text('Toggle RTL')
+        }
+
+    })
+</script> --}}
 <!-- JS Plugins Init. -->
 <script>
     $(document).on('ready', function () {
@@ -232,33 +268,6 @@
     }
 </script>
 <script>
-    @if(\App\CentralLogics\Helpers::employee_module_permission_check('order'))
-    var order_type = 'all';
-    setInterval(function () {
-        $.get({
-            url: '{{route('vendor.get-store-data')}}',
-            dataType: 'json',
-            success: function (response) {
-                let data = response.data;
-                if (data.new_pending_order > 0) {
-                    order_type = 'pending';
-                    playAudio();
-                    $('#popup-modal').appendTo("body").modal('show');
-                }
-                else if(data.new_confirmed_order > 0)
-                {
-                    order_type = 'confirmed';
-                    playAudio();
-                    $('#popup-modal').appendTo("body").modal('show');
-                }
-            },
-        });
-    }, 10000);
-    @endif
-    function check_order() {
-        location.href = '{{url('/')}}/store-panel/order/list/'+order_type;
-    }
-
     function route_alert(route, message) {
         Swal.fire({
             title: '{{ translate('messages.Are you sure?') }}',
@@ -317,33 +326,50 @@
     const messaging = firebase.messaging();
     function startFCM() {
 
-        messaging
-            .requestPermission()
-            .then(function () {
-                return messaging.getToken()
+messaging
+    .requestPermission()
+    .then(function () {
+        return messaging.getToken()
 
-            }).then(function (response) {
-                console.log(response);
-                $.ajaxSetup({
-                    headers: {
-                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                    }
-                });
-                $.ajax({
-                    url: '{{ route('vendor.store.token') }}',
-                    type: 'POST',
-                    data: {
-                        token: response
-                    },
-                    // error: function (error) {
-                    //     alert(error);
-                    // },
-                });
-            }).catch(function (error) {
-                console.log(error);
-            });
+    }).then(function (response) {
+        @php($store_id=\App\CentralLogics\Helpers::get_store_id())
+        subscribeTokenToTopic(response, "store_panel_{{$store_id}}_message");
+        // $.ajaxSetup({
+        //     headers: {
+        //         'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        //     }
+        // });
+        // $.ajax({
+        //     url: '{{ route('vendor.store.token') }}',
+        //     type: 'POST',
+        //     data: {
+        //         token: response
+        //     },
+        //     // error: function (error) {
+        //     //     alert(error);
+        //     // },
+        // });
+    }).catch(function (error) {
+        console.log(error);
+    });
+}
+
+@php($key = \App\Models\BusinessSetting::where('key', 'push_notification_key')->first())
+function subscribeTokenToTopic(token, topic) {
+fetch('https://iid.googleapis.com/iid/v1/' + token + '/rel/topics/' + topic, {
+    method: 'POST',
+    headers: new Headers({
+        'Authorization': 'key={{ $key ? $key->value : '' }}'
+    })
+}).then(response => {
+    if (response.status < 200 || response.status >= 400) {
+        throw 'Error subscribing to topic: ' + response.status + ' - ' + response.text();
     }
-
+    console.log('Subscribed to "' + topic + '"');
+}).catch(error => {
+    console.error(error);
+})
+}
     function getUrlParameter(sParam) {
             var sPageURL = window.location.search.substring(1);
             var sURLVariables = sPageURL.split('&');
@@ -379,9 +405,16 @@
                 }
             })
         }
-
+        var order_type = 'all';
         messaging.onMessage(function (payload) {
             console.log(payload.data);
+            if(payload.data.order_id && payload.data.type == 'new_order'){
+                @if(\App\CentralLogics\Helpers::employee_module_permission_check('order'))
+                    order_type = payload.data.order_type
+                    playAudio();
+                    $('#popup-modal').appendTo("body").modal('show');
+                @endif
+            }else if(payload.data.type == 'message'){
             var conversation_id = getUrlParameter('conversation');
             var user_id = getUrlParameter('user');
             var url= '{{url('/')}}/store-panel/message/view/'+conversation_id+'/' + user_id;
@@ -391,7 +424,7 @@
                     $('#view-conversation').html(data.view);
                 }
             })
-            toastr.success('New message arrived', {
+            toastr.success('{{ translate('messages.New message arrived') }}', {
                         CloseButton: true,
                         ProgressBar: true
                     });
@@ -399,15 +432,11 @@
             if($('#conversation-list').scrollTop() == 0){
                 converationList();
             }
-            // playAudio();
-            //         $('#popup-modal-msg').appendTo("body").modal('show');
-            // const title = payload.notification.title;
-            // const options = {
-            //     body: payload.notification.body,
-            //     icon: payload.notification.icon,
-            // };
-            // new Notification(title, options);
+        }
         });
+        function check_order() {
+            location.href = '{{url('/')}}/store-panel/order/list/'+order_type;
+        }
 
         startFCM();
         converationList();

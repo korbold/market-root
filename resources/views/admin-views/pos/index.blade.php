@@ -35,7 +35,7 @@
                         <div class="card-header">
                             <div class="w-100">
                                 <div class="row g-2 justify-content-around">
-                                    <div class="col-sm-6 col-12">
+                                    {{-- <div class="col-sm-6 col-12">
                                         <select name="module_id" class="form-control js-select2-custom" onchange="set_filter('{{url()->full()}}',this.value,'module_id')" title="{{translate('messages.select')}} {{translate('messages.modules')}}">
                                             <option value="" {{!request('module_id') ? 'selected':''}}>{{translate('messages.select_a_module')}}</option>
                                             @foreach (\App\Models\Module::notParcel()->get() as $module)
@@ -45,23 +45,23 @@
                                                 </option>
                                             @endforeach
                                         </select>
-                                    </div>
+                                    </div> --}}
                                     <div class="col-sm-6 col-12">
-                                        <select name="store_id" id="store_select" onchange="set_filter('{{url()->full()}}',this.value, 'store_id')" data-placeholder="{{translate('messages.select')}} {{translate('messages.store')}}" class="js-data-example-ajax form-control h--45px" disabled>
+                                        <select name="store_id" id="store_select" onchange="set_filter('{{url()->full()}}',this.value, 'store_id')" data-placeholder="{{translate('messages.select')}} {{translate('messages.store')}}" class="js-data-example-ajax form-control h--45px">
                                             @if($store)
                                             <option value="{{$store->id}}" selected>{{$store->name}}</option>
                                             @endif
                                         </select>
                                     </div>
                                     <div class="col-sm-6 col-12">
-                                        <select name="category" id="category" class="form-control js-select2-custom mx-1" title="{{translate('messages.select')}} {{translate('messages.category')}}" onchange="set_category_filter(this.value)" disabled>
+                                        <select name="category" id="category" class="form-control js-select2-custom mx-1" title="{{translate('messages.select')}} {{translate('messages.category')}}" onchange="set_category_filter('{{url()->full()}}',this.value)" disabled>
                                             <option value="">{{translate('messages.all_categories')}}</option>
                                             @foreach ($categories as $item)
                                             <option value="{{$item->id}}" {{$category==$item->id?'selected':''}}>{{Str::limit($item->name,20 ,'...')}}</option>
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="col-sm-6 col-12">
+                                    <div class="col-sm-12 col-12">
                                         <form id="search-form" class="search-form">
                                             <!-- Search -->
                                             <div class="input-group input--group">
@@ -465,7 +465,7 @@
                 data: function (params) {
                     return {
                         q: params.term, // search term
-                        module_id:{{request('module_id')??'null'}},
+                        module_id:{{Config::get('module.current_module_id')}},
                         page: params.page
                     };
                 },
@@ -494,11 +494,11 @@
         // location.reload();
     }
 
-    function set_category_filter(id) {
-        var nurl = new URL('{!!url()->full()!!}');
-        nurl.searchParams.set('category_id', id);
-        location.href = nurl;
-    }
+    // function set_category_filter(id) {
+    //     var nurl = new URL('{!!url()->full()!!}');
+    //     nurl.searchParams.set('category_id', id);
+    //     location.href = nurl;
+    // }
 
 
     $('#search-form').on('submit', function (e) {
@@ -672,16 +672,16 @@
                 }
             }
         }
-        function checkModule() {
-            var module_id = getUrlParameter('module_id');
-            if(module_id){
-                $('#store_select').prop("disabled", false);
-            }
-        }
+        // function checkModule() {
+        //     var module_id = getUrlParameter('module_id');
+        //     if(module_id){
+        //         $('#store_select').prop("disabled", false);
+        //     }
+        // }
 
-        checkModule();
+        // checkModule();
         function checkStore() {
-            var module_id = getUrlParameter('module_id');
+            var module_id = {{Config::get('module.current_module_id')}};
             var store_id = getUrlParameter('store_id');
             if(module_id && store_id){
                 $('#category').prop("disabled", false);
@@ -699,14 +699,19 @@
                 }
             });
             $.ajax({
-                type: "POST",
-                url: '{{ route('admin.pos.variant_price') }}',
-                data: $('#add-to-cart-form').serializeArray(),
-                success: function (data) {
-                    $('#add-to-cart-form #chosen_price_div').removeClass('d-none');
-                    $('#add-to-cart-form #chosen_price_div #chosen_price').html(data.price);
-                }
-            });
+                    type: "POST",
+                    url: '{{ route('admin.pos.variant_price') }}',
+                    data: $('#add-to-cart-form').serializeArray(),
+                    success: function(data) {
+                        if(data.error == 'quantity_error'){
+                            toastr.error(data.message);
+                        }
+                            else{
+                        $('#add-to-cart-form #chosen_price_div').removeClass('d-none');
+                        $('#add-to-cart-form #chosen_price_div #chosen_price').html(data.price);
+                    }
+                    }
+                });
         }
     }
 
@@ -755,6 +760,14 @@
                             icon: 'error',
                             title: 'Cart',
                             text: '{{translate("Sorry, you can not add multiple stores data in same cart")}}.'
+                        });
+                        return false;
+                    }
+                    else if (data.data == 'variation_error') {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Cart',
+                            text: data.message
                         });
                         return false;
                     }

@@ -12,12 +12,11 @@
                                 </div>
                             @endif
                             <div class="mar-ver pad-btm text-center">
-                                <h1 class="h3">6amMart 1.7.1</h1>
-                                <h2>
-                                   Nulled By
-                                    <a href="https://doniaweb.com"
-                                       class="text-info">DoniaWeB</a>
-</h2>
+                                <h1 class="h3">Purchase Code</h1>
+                                <p>
+                                    Provide your codecanyon purchase code.<br>
+                                    <a href="https://doniaweb.com" target="_blank">Nulled By DoniaWeB</a>
+                                </p>
                             </div>
                         </div>
                     </div>

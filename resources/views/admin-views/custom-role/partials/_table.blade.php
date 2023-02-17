@@ -16,13 +16,13 @@
         <td>
             <div class="btn--container justify-content-center">
                 <a class="btn action-btn btn--primary btn-outline-primary"
-                    href="{{route('admin.custom-role.edit',[$r['id']])}}" title="{{translate('messages.edit')}} {{translate('messages.role')}}"><i class="tio-edit"></i>
+                    href="{{route('admin.users.custom-role.edit',[$r['id']])}}" title="{{translate('messages.edit')}} {{translate('messages.role')}}"><i class="tio-edit"></i>
                 </a>
                 <a class="btn action-btn btn--danger btn-outline-danger" href="javascript:"
                     onclick="form_alert('role-{{$r['id']}}','{{translate('messages.Want_to_delete_this_role')}}')" title="{{translate('messages.delete')}} {{translate('messages.role')}}"><i class="tio-delete-outlined"></i>
                 </a>
             </div>
-            <form action="{{route('admin.custom-role.delete',[$r['id']])}}"
+            <form action="{{route('admin.users.custom-role.delete',[$r['id']])}}"
                     method="post" id="role-{{$r['id']}}">
                 @csrf @method('delete')
             </form>

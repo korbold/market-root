@@ -28,9 +28,61 @@ class DeliveryManController extends Controller
         $zone_id = $request->query('zone_id', 'all');
         $delivery_men = DeliveryMan::when(is_numeric($zone_id), function($query) use($zone_id){
             return $query->where('zone_id', $zone_id);
-        })->with('zone')->where('type','zone_wise')->latest()->paginate(config('default_pagination'));
+        })->with('zone')->where('type','zone_wise')
+        ->where('application_status', 'approved')
+        ->latest()->paginate(config('default_pagination'));
         $zone = is_numeric($zone_id)?Zone::findOrFail($zone_id):null;
         return view('admin-views.delivery-man.list', compact('delivery_men', 'zone'));
+    }
+
+    public function new_delivery_man(Request $request)
+    {
+        $search_by = $request->query('search_by');
+        $key = explode(' ', $search_by);
+        $zone_id = $request->query('zone_id', 'all');
+        $delivery_men = DeliveryMan::when(is_numeric($zone_id), function($query) use($zone_id){
+            return $query->where('zone_id', $zone_id);
+        })->with('zone')->where('type','zone_wise')
+        ->where('application_status', 'pending')
+        ->when($search_by, function($query)use($key){
+            return $query->where(function ($q) use ($key) {
+                foreach ($key as $value) {
+                    $q->orWhere('f_name', 'like', "%{$value}%")
+                        ->orWhere('l_name', 'like', "%{$value}%")
+                        ->orWhere('email', 'like', "%{$value}%")
+                        ->orWhere('phone', 'like', "%{$value}%")
+                        ->orWhere('identity_number', 'like', "%{$value}%");
+                }
+            });
+        })
+        ->latest()->paginate(config('default_pagination'));
+        $zone = is_numeric($zone_id)?Zone::findOrFail($zone_id):null;
+        return view('admin-views.delivery-man.new', compact('delivery_men', 'zone', 'search_by'));
+    }
+
+    public function deny_delivery_man(Request $request)
+    {
+        $search_by = $request->query('search_by');
+        $key = explode(' ', $search_by);
+        $zone_id = $request->query('zone_id', 'all');
+        $delivery_men = DeliveryMan::when(is_numeric($zone_id), function($query) use($zone_id){
+            return $query->where('zone_id', $zone_id);
+        })->with('zone')->where('type','zone_wise')
+        ->where('application_status', 'denied')
+        ->when($search_by, function($query)use($key){
+            return $query->where(function ($q) use ($key) {
+                foreach ($key as $value) {
+                    $q->orWhere('f_name', 'like', "%{$value}%")
+                        ->orWhere('l_name', 'like', "%{$value}%")
+                        ->orWhere('email', 'like', "%{$value}%")
+                        ->orWhere('phone', 'like', "%{$value}%")
+                        ->orWhere('identity_number', 'like', "%{$value}%");
+                }
+            });
+        })
+        ->latest()->paginate(config('default_pagination'));
+        $zone = is_numeric($zone_id)?Zone::findOrFail($zone_id):null;
+        return view('admin-views.delivery-man.deny', compact('delivery_men', 'zone', 'search_by'));
     }
 
     public function search(Request $request){
@@ -43,10 +95,30 @@ class DeliveryManController extends Controller
                     ->orWhere('phone', 'like', "%{$value}%")
                     ->orWhere('identity_number', 'like', "%{$value}%");
             }
-        })->where('type','zone_wise')->get();
+        })->where('type','zone_wise')
+        ->where('application_status', 'approved')
+        ->get();
         return response()->json([
             'view'=>view('admin-views.delivery-man.partials._table',compact('delivery_men'))->render(),
             'count'=>$delivery_men->count()
+        ]);
+    }
+
+    public function active_search(Request $request){
+        $key = explode(' ', $request['search']);
+        $delivery_men=DeliveryMan::where(function ($q) use ($key) {
+            foreach ($key as $value) {
+                $q->orWhere('f_name', 'like', "%{$value}%")
+                    ->orWhere('l_name', 'like', "%{$value}%")
+                    ->orWhere('email', 'like', "%{$value}%")
+                    ->orWhere('phone', 'like', "%{$value}%")
+                    ->orWhere('identity_number', 'like', "%{$value}%");
+            }
+        })->where('type','zone_wise')
+        ->Active()
+        ->first();
+        return response()->json([
+            'dm'=>$delivery_men
         ]);
     }
 
@@ -133,7 +205,7 @@ class DeliveryManController extends Controller
         $dm->save();
 
         Toastr::success(translate('messages.deliveryman_added_successfully'));
-        return redirect('admin/delivery-man/list');
+        return redirect('admin/users/delivery-man/list');
     }
 
     public function edit($id)
@@ -273,7 +345,7 @@ class DeliveryManController extends Controller
             $userinfo->save();
         }
         Toastr::success(translate('messages.deliveryman_updated_successfully'));
-        return redirect('admin/delivery-man/list');
+        return redirect('admin/users/delivery-man/list');
     }
 
     public function delete(Request $request)
@@ -400,7 +472,9 @@ class DeliveryManController extends Controller
         $zone_id = $request->query('zone_id', 'all');
         $delivery_men = DeliveryMan::when(is_numeric($zone_id), function($query) use($zone_id){
             return $query->where('zone_id', $zone_id);
-        })->with('zone')->where('type','zone_wise')->get();
+        })->with('zone')->where('type','zone_wise')
+        ->where('application_status', 'approved')
+        ->get();
         if($request->type == 'excel'){
             return (new FastExcel(Helpers::export_delivery_men($delivery_men)))->download('DeliveryMans.xlsx');
         }elseif($request->type == 'csv'){

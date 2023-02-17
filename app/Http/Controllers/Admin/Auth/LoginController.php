@@ -9,6 +9,7 @@ use Gregwar\Captcha\CaptchaBuilder;
 use Illuminate\Support\Facades\Session;
 use App\CentralLogics\Helpers;
 use App\Models\Admin;
+use App\Models\Module;
 use Illuminate\Support\Facades\Http;
 
 class LoginController extends Controller
@@ -59,7 +60,12 @@ class LoginController extends Controller
             $admin = Admin::find(auth('admin')->id());
             $admin->is_logged_in = 1;
             $admin->save();
-            return redirect()->route('admin.dashboard');
+            $modules = Module::Active()->get();
+            if(isset($modules)&&($modules->count()>0)){
+
+                return redirect()->route('admin.dashboard');
+            }
+            return redirect()->route('admin.business-settings.business-setup');
         }
 
         return redirect()->back()->withInput($request->only('email', 'remember'))

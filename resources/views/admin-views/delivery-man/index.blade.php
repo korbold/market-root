@@ -3,7 +3,7 @@
 @section('title',translate('messages.Add new delivery-man'))
 
 @push('css_or_js')
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.13/css/intlTelInput.css" integrity="sha512-gxWow8Mo6q6pLa1XH/CcH8JyiSDEtiwJV78E+D+QP0EVasFs8wKXq16G8CLD4CJ2SnonHr4Lm/yY2fSI2+cbmw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="{{asset('/public/assets/admin/css/intlTelInput.css')}}"/>
 @endpush
 
 @section('content')
@@ -18,7 +18,7 @@
             </h1>
         </div>
         <!-- End Page Header -->
-        <form action="{{route('admin.delivery-man.store')}}" method="post" enctype="multipart/form-data" class="js-validate">
+        <form action="{{route('admin.users.delivery-man.store')}}" method="post" enctype="multipart/form-data" class="js-validate">
             @csrf
             <div class="card">
                 <div class="card-header">

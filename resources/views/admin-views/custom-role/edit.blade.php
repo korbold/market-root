@@ -23,7 +23,7 @@
         <div class="col-md-12">
             <div class="card">
                 <div class="card-body">
-                    <form action="{{route('admin.custom-role.update',[$role['id']])}}" method="post">
+                    <form action="{{route('admin.users.custom-role.update',[$role['id']])}}" method="post">
                         @csrf
                         <div class="form-group">
                             <label class="input-label qcont" for="name">{{translate('messages.role_name')}}</label>

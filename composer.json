@@ -24,11 +24,13 @@
         "laravelpkg/laravelchk": "dev-master",
         "madnest/madzipper": "*",
         "mercadopago/dx-php": "2.4.3",
+        "mpdf/mpdf": "^8.0",
         "nexmo/laravel": "^2.4",
         "paypal/rest-api-sdk-php": "^1.14",
         "rap2hpoutre/fast-excel": "^3.0",
         "razorpay/razorpay": "^2.5",
         "stripe/stripe-php": "^7.77",
+        "symfony/symfony": "5.4.x",
         "twilio/sdk": "^6.28",
         "unicodeveloper/laravel-paystack": "1.0.*"
     },

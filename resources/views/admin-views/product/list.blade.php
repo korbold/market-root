@@ -11,7 +11,7 @@
         <!-- Page Header -->
         <div class="page-header">
             <div class="row align-items-center g-2">
-                <div class="col-md-6 col-12">
+                <div class="col-md-9 col-12">
                     <h1 class="page-header-title">
                         <span class="page-header-icon">
                             <img src="{{asset('public/assets/admin/img/items.png')}}" class="w--22" alt="">
@@ -21,7 +21,7 @@
                         </span>
                     </h1>
                 </div>
-                <div class="col-sm-6 col-md-3">
+                {{-- <div class="col-sm-6 col-md-3">
                     <select name="module_id" class="form-control js-select2-custom" onchange="set_filter('{{url()->full()}}',this.value,'module_id')" title="{{translate('messages.select')}} {{translate('messages.modules')}}">
                         <option value="" {{!request('module_id') ? 'selected':''}}>{{translate('messages.all')}} {{translate('messages.modules')}}</option>
                         @foreach (\App\Models\Module::notParcel()->get() as $module)
@@ -31,8 +31,8 @@
                             </option>
                         @endforeach
                     </select>
-                </div>
-                <div class="col-sm-6 col-md-3">
+                </div> --}}
+                <div class="col-sm-3 col-md-3">
                     <select name="store_id" id="store" onchange="set_store_filter('{{url()->full()}}',this.value)" data-placeholder="{{translate('messages.select')}} {{translate('messages.store')}}" class="js-data-example-ajax form-control" onchange="getStoreData('{{url('/')}}/admin/store/get-addons?data[]=0&store_id=',this.value,'add_on')" required title="Select Store" oninvalid="this.setCustomValidity('{{translate('messages.please_select_store')}}')">
                     @if($store)
                     <option value="{{$store->id}}" selected>{{$store->name}}</option>
@@ -70,9 +70,11 @@
                         </select>
                     </div>
                     <!-- End Unfold -->
+                    @if (Config::get('module.current_module_type') != 'food')                    
                     <div>
                         <a href="{{ route('admin.report.stock-report') }}" class="btn btn--primary font-regular">{{translate('messages.limited_stock')}}</a>
                     </div>
+                    @endif
                     <div class="hs-unfold mr-2">
                         <a class="js-hs-unfold-invoker btn btn-sm btn-white dropdown-toggle min-height-40" href="javascript:;"
                             data-hs-unfold-options='{
@@ -410,7 +412,7 @@
                 data: function (params) {
                     return {
                         q: params.term, // search term
-                        all:true,
+                        module_id:{{Config::get('module.current_module_id')}},
                         page: params.page
                     };
                 },
@@ -437,6 +439,7 @@
                     return {
                         q: params.term, // search term
                         all:true,
+                        module_id:{{Config::get('module.current_module_id')}},
                         page: params.page
                     };
                 },

@@ -156,11 +156,11 @@ class AccountTransactionController extends Controller
     }
 
     public function export_account_transaction(Request $request){
-        $account_transaction = AccountTransaction::all();
+        $account_transaction = AccountTransaction::latest()->get();
         if($request->type == 'excel'){
-            return (new FastExcel($account_transaction))->download('Account_transactions.xlsx');
+            return (new FastExcel(Helpers::export_account_transaction($account_transaction)))->download('Account_transactions.xlsx');
         }elseif($request->type == 'csv'){
-            return (new FastExcel($account_transaction))->download('Account_transactions.csv');
+            return (new FastExcel(Helpers::export_account_transaction($account_transaction)))->download('Account_transactions.csv');
         }
     }
 

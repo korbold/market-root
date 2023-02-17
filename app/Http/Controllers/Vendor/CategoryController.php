@@ -39,11 +39,15 @@ class CategoryController extends Controller
 
     public function search(Request $request){
         $key = explode(' ', $request['search']);
-        $categories=Category::where(function ($q) use ($key) {
+        $categories=Category::where(['position'=>0])
+        ->module(Helpers::get_store_data()->module_id)
+        ->where(function ($q) use ($key) {
             foreach ($key as $value) {
                 $q->orWhere('name', 'like', "%{$value}%");
             }
-        })->limit(50)->get();
+        })
+        ->latest()
+        ->limit(50)->get();
         return response()->json([
             'view'=>view('vendor-views.category.partials._table',compact('categories'))->render(),
             'count'=>$categories->count()

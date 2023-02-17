@@ -22,7 +22,7 @@
         <!-- End Page Header -->
         <div class="card">
             <div class="card-body">
-                <form action="{{route('admin.module.update',[$module['id']])}}" method="post" enctype="multipart/form-data">
+                <form action="{{route('admin.business-settings.module.update',[$module['id']])}}" method="post" enctype="multipart/form-data">
                     @method('PUT')
                     @csrf
                     @php($language=\App\Models\BusinessSetting::where('key','language')->first())
@@ -91,7 +91,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-sm-6">
+                        {{-- <div class="col-sm-6">
                             <div class="form-group" id="zone_check">
                                 <label class="input-label">{{ translate('Store can serve in') }} <small class="text-danger"><span class="input-label-secondary"
                                         title="{{ translate('messages.module_all_zone_hint') }}">
@@ -122,7 +122,7 @@
                                     <!-- End Custom Radio -->
                                 </div>
                             </div>
-                        </div>
+                        </div> --}}
                     </div>
                     <div class="form-group" id="module_theme" >
                         <label class="input-label" for="module_type">{{translate('messages.select_theme')}}</label>

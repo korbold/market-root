@@ -23,9 +23,9 @@
                 </span>
             </div>
         </div>
-        <div class="col-12 text-right mt--xl--10">
+        {{--<div class="col-12 text-right mt--xl--10">
           <span class="badge badge-soft-primary">{{translate('messages.zone')}} : {{$zone_name}}</span>
-        </div>
+        </div>--}}
     </div>
     <!-- End Row -->
 
@@ -48,9 +48,9 @@
                   },
                   {
                     "data": [{{$commission[1]}},{{$commission[2]}},{{$commission[3]}},{{$commission[4]}},{{$commission[5]}},{{$commission[6]}},{{$commission[7]}},{{$commission[8]}},{{$commission[9]}},{{$commission[10]}},{{$commission[11]}},{{$commission[12]}}],
-                    "backgroundColor": "#d9f1f1",
-                    "hoverBackgroundColor": "#d9f1f1",
-                    "borderColor": "#d9f1f1"
+                    "backgroundColor": "#b9e0e0",
+                    "hoverBackgroundColor": "#b9e0e0",
+                    "borderColor": "#b9e0e0"
                   },
                   {
                     "data": [{{$delivery_commission[1]}},{{$delivery_commission[2]}},{{$delivery_commission[3]}},{{$delivery_commission[4]}},{{$delivery_commission[5]}},{{$delivery_commission[6]}},{{$delivery_commission[7]}},{{$delivery_commission[8]}},{{$delivery_commission[9]}},{{$delivery_commission[10]}},{{$delivery_commission[11]}},{{$delivery_commission[12]}}],

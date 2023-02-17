@@ -1,7 +1,7 @@
     <!-- Page Header -->
     <div class="page-header pb-0">
-        <div class="row align-items-center">
-            <div class="col-6">
+        <div class="d-flex justify-content-between">
+            <div>
                 <h1 class="page-header-title text-break">
                     <span class="page-header-icon">
                         <img src="{{asset('public/assets/admin/img/store.png')}}" class="w--26" alt="">
@@ -9,7 +9,7 @@
                     <span>{{$store->name}}</span>
                 </h1>
             </div>
-            <div class="col-6">
+            <div>
                 @if(Request::is("admin/store/view/{$store->id}"))
                     @if($store->vendor->status)
                     <a href="{{route('admin.store.edit',[$store->id])}}" class="btn btn--primary float-right">
@@ -19,11 +19,11 @@
                         @if(!isset($store->vendor->status))
                         <a class="btn btn--danger text-capitalize font-weight-bold float-right"
                         onclick="request_alert('{{route('admin.store.application',[$store['id'],0])}}','{{translate('messages.you_want_to_deny_this_application')}}')"
-                            href="javascript:">{{translate('messages.deny')}}</a>
+                            href="javascript:"><i class="tio-clear-circle-outlined font-weight-bold pr-1"></i> {{translate('messages.deny')}}</a>
                         @endif
                         <a class="btn btn--primary text-capitalize font-weight-bold float-right mr-2"
                         onclick="request_alert('{{route('admin.store.application',[$store['id'],1])}}','{{translate('messages.you_want_to_approve_this_application')}}')"
-                            href="javascript:">{{translate('messages.approve')}}</a>
+                            href="javascript:"><i class="tio-checkmark-circle-outlined font-weight-bold pr-1"></i>{{translate('messages.approve')}}</a>
                     @endif
                 @endif
             </div>

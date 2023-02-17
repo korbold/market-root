@@ -1,6 +1,7 @@
 <?php
 
 use App\CentralLogics\Helpers;
+use App\Models\NotificationMessage;
 use Illuminate\Support\Facades\Route;
 
 
@@ -108,10 +109,11 @@ Route::any('/paytabs-response', 'PaytabsController@callback_response')->name('pa
 Route::group(['prefix' => 'bkash'], function () {
     // Payment Routes for bKash
     Route::post('get-token', 'BkashPaymentController@getToken')->name('bkash-get-token');
-    Route::post('create-payment', 'BkashPaymentController@createPayment')->name('bkash-create-payment');
-    Route::post('execute-payment', 'BkashPaymentController@executePayment')->name('bkash-execute-payment');
-    Route::get('query-payment', 'BkashPaymentController@queryPayment')->name('bkash-query-payment');
-    Route::post('success', 'BkashPaymentController@bkashSuccess')->name('bkash-success');
+    // Route::post('create-payment', 'BkashPaymentController@createPayment')->name('bkash-create-payment');
+    // Route::post('execute-payment', 'BkashPaymentController@executePayment')->name('bkash-execute-payment');
+    // Route::get('query-payment', 'BkashPaymentController@queryPayment')->name('bkash-query-payment');
+    Route::get('make-payment', 'BkashPaymentController@make_tokenize_payment')->name('bkash-make-payment');
+    Route::any('callback', 'BkashPaymentController@callback')->name('bkash-callback');
 
     // Refund Routes for bKash
     // Route::get('refund', 'BkashRefundController@index')->name('bkash-refund');
@@ -128,8 +130,6 @@ Route::any('liqpay-callback/{order_id}', 'LiqPayController@callback')->name('liq
 
 
 Route::get('/test', function () {
-    // dd(Helpers::generate_referer_code());
-    // dd(Helpers::referer_code_exists(3443252462));
     dd('Hello tester');
 });
 

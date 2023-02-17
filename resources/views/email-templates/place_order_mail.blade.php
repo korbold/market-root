@@ -115,7 +115,7 @@
                         <h3 style="color:green;">{{ translate('messages.Your_order_ID') }} : {{ $order_id }}</h3>
                     </td>
                     <td>
-                        <div style="text-align: right; margin-right:15px;">
+                        <div style="text-align: end; margin-inline-end:15px;">
                             <img style="max-width:250px;border:0;"
                                 src="{{ asset('/storage/app/public/business/' . $logo) }}" title=""
                                 class="sitelogo" width="60%" alt="Image" />
@@ -130,7 +130,7 @@
                 <tr style="width: 100%;">
                     @if ($order->order_type != 'parcel')
                         <td style="width:50%;vertical-align: top; margin-top:5px;">
-                            <div style="text-align:left;margin-top:10px;">
+                            <div style="text-align:start;margin-top:10px;">
                                 <span style="color: #130505 !important;text-transform: capitalize;font-weight: bold;">
                                     {{ translate('messages.store_info') }} </span><br>
                                 @if ($order->store)
@@ -138,13 +138,13 @@
                                         <img style="border:0;border-radius:50%;"
                                             src="{{ asset('/storage/app/public/store/' . $order->store->logo) }}" title="Logo"
                                             class="sitelogo" width="20%" alt="Image" />
-                                        <span style="padding-left: 5px;">{{ $order->store->name }}</span>
+                                        <span style="padding-inline-start: 5px;">{{ $order->store->name }}</span>
                                     </div>
                                 @endif
                             </div>
                         </td>
                         <td style="width:50%;vertical-align: top;">
-                            <div style="text-align:right;margin-top:10px;">
+                            <div style="text-align:end;margin-top:10px;">
                                 <span
                                     style="color: #130505 !important;text-transform: capitalize;font-weight: bold;">{{ translate('messages.payment_details') }}
                                 </span><br>
@@ -279,10 +279,10 @@
         </div>
         <table style="background-color: rgb(255, 255, 255);width: 90%;margin:auto;margin-top:30px;">
             <tr>
-                <th style="text-align: left; vertical-align: auto;">
+                <th style="text-align: start; vertical-align: auto;">
                 </th>
-                <td style="text-align: right">
-                    <table style="width: 46%;margin-left:41%; display: inline;text-transform: capitalize; ">
+                <td style="text-align: end">
+                    <table style="width: 46%;margin-inline-start:41%; display: inline;text-transform: capitalize; ">
                         <tbody>
                         @if ($order->order_type !='parcel')
                             <tr>
@@ -362,7 +362,7 @@
                 <tr>
                     <th>
                         <div style="font-weight: 400;font-size: 11px;line-height: 22px;color: #242A30;"><span
-                                style="margin-right:5px;"> <a href="tel:{{ $company_phone }}"
+                                style="margin-inline-end:5px;"> <a href="tel:{{ $company_phone }}"
                                     style="text-decoration: none; color: inherit;">{{ translate('messages.phone') }}:
                                     {{ $company_phone }}</a></span> <span><a href="mailto:{{ $company_email }}"
                                     style="text-decoration: none; color: inherit;">{{ translate('messages.email') }}:

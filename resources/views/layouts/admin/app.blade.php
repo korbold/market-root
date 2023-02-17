@@ -1,5 +1,7 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+@php($site_direction = \App\Models\BusinessSetting::where('key', 'site_direction')->first())
+@php($site_direction = $site_direction->value ?? 'ltr')
+<html dir="{{ $site_direction }}" lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="{{ $site_direction === 'rtl'?'active':'' }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -19,6 +21,7 @@
     <!-- CSS Front Template -->
     <link rel="stylesheet" href="{{asset('public/assets/admin/css/bootstrap.min.css')}}">
     <link rel="stylesheet" href="{{asset('public/assets/admin/css/theme.minc619.css?v=1.0')}}">
+    <link rel="stylesheet" href="{{asset('public/assets/admin/css/bootstrap-tour-standalone.min.css')}}">
     <link rel="stylesheet" href="{{asset('public/assets/admin/css/style.css')}}">
     @stack('css_or_js')
 
@@ -28,6 +31,12 @@
 </head>
 
 <body class="footer-offset">
+    @if (env('APP_MODE')=='demo')
+    <div class="direction-toggle">
+        <i class="tio-settings"></i>
+        <span></span>
+    </div>  
+    @endif
 
 <div class="container">
     <div class="row">
@@ -40,14 +49,18 @@
         </div>
     </div>
 </div>
-
+@if (!isset($module_type))   
+@php($module_type = Config::get('module.current_module_type'))
+@endif
 <!-- Builder -->
 @include('layouts.admin.partials._front-settings')
 <!-- End Builder -->
 
 <!-- JS Preview mode only -->
 @include('layouts.admin.partials._header')
-@include('layouts.admin.partials._sidebar')
+
+@include("layouts.admin.partials._sidebar_{$module_type}")
+
 <!-- END ONLY DEV -->
 
 <main id="content" role="main" class="main pointer-event">
@@ -109,6 +122,7 @@
 <script src="{{asset('public/assets/admin')}}/js/vendor.min.js"></script>
 <script src="{{asset('public/assets/admin')}}/js/theme.min.js"></script>
 <script src="{{asset('public/assets/admin')}}/js/sweet_alert.js"></script>
+<script src="{{asset('public/assets/admin')}}/js/bootstrap-tour-standalone.min.js"></script>
 <script src="{{asset('public/assets/admin')}}/js/toastr.js"></script>
 {!! Toastr::message() !!}
 
@@ -233,6 +247,104 @@
 </script>
 
 @stack('script_2')
+
+<script>
+    @php($modules = \App\Models\Module::Active()->get())
+    var tour = new Tour({
+        backdrop: true,
+        delay: true,
+        redirect: true,
+        name:'tour',
+        steps: [
+            {
+                element: "#tourb-0",
+                title: "Module",
+                placement: 'right',
+                content: "From here you can switch to multiple modules."
+            },
+            {
+                element: "#tourb-1",
+                title: "Module Selection",
+                content: "You can select a module from here.",
+                onNext: function(){
+                    document.location.href = "{{ route('admin.dashboard') }}?module_id={{count($modules)>0?$modules[0]->id:1}}";
+                } 
+            },
+            {
+                element: "#navbar-vertical-content",
+                title: "Module Sidebar",
+                content: "This is the module wise sidebar."
+            },
+            {
+                element: "#tourb-3",
+                title: "Settings",
+                content: "From here you can go to settings option."
+            },
+            {
+                element: "#tourb-4",
+                title: "Settings Menu",
+                content: "From here you can select any settings option.",   
+                onNext: function(){
+                    document.location.href = "{{ route('admin.business-settings.business-setup') }}";
+                } 
+            },
+            {
+                element: "#navbar-vertical-content",
+                title: "Settings Sidebar",
+                content: "This is the settings sidebar. Different from module",
+            },
+            {
+                element: "#tourb-6",
+                title: "User Section",
+                content: "You can manage all the users by selecting this option.",
+            },
+            {
+                element: "#tourb-7",
+                title: "Transaction and Report",
+                content: "You can manage all the Transaction and Report by selecting this option."
+            },
+            {
+                element: "#tourb-8",
+                title: "Dispatch Management",
+                content: "You can manage all dispatch orders by selecting this option."
+            },
+            {
+                element: "#tourb-9",
+                title: "Profile and Logout",
+                content: "You can visit your profile or logut from this panel.",
+                placement:'top'
+            }
+        ],
+        onEnd: function() {
+            $('body').css('overflow','')
+        },
+        onShow: function() {
+            $('body').css('overflow','hidden')
+        }
+    });
+
+    // Initialize the tour
+    tour.init();
+
+
+    
+    @if(isset($modules) && ($modules->count()>0))
+        // Start the tour
+        tour.start();
+        // $('body').css('overflow','hidden')
+    @endif
+
+    function restartTour() {
+        @if(isset($modules) && ($modules->count()>0))
+            // Start the tour
+            tour.restart();
+            $('body').css('overflow','hidden')
+        @endif
+    }
+
+
+    
+</script>
 <audio id="myAudio">
     <source src="{{asset('public/assets/admin/sound/notification.mp3')}}" type="audio/mpeg">
 </audio>
@@ -249,39 +361,6 @@
     }
 </script>
 <script>
-    var new_order_type='store_order';
-    @if(\App\CentralLogics\Helpers::module_permission_check('order'))
-        @php($admin_order_notification=\App\Models\BusinessSetting::where('key','admin_order_notification')->first())
-        @php($admin_order_notification=$admin_order_notification?$admin_order_notification->value:0)
-        @if($admin_order_notification)
-        setInterval(function () {
-            $.get({
-                url: '{{route('admin.get-store-data')}}',
-                dataType: 'json',
-                success: function (response) {
-                    let data = response.data;
-                    new_order_type = data.type;
-                    if (data.new_order > 0) {
-                        playAudio();
-                        $('#popup-modal').appendTo("body").modal('show');
-                    }
-                },
-            });
-        }, 10000);
-
-        function check_order() {
-            if(new_order_type == 'parcel_order')
-            {
-                location.href = "{{route('admin.parcel.orders')}}";
-            }
-            else
-            {
-                location.href = "{{route('admin.order.list',['status'=>'all'])}}";
-            }
-
-        }
-        @endif
-    @endif
     function route_alert(route, message, title="{{translate('messages.are_you_sure')}}") {
         Swal.fire({
             title: title,
@@ -329,6 +408,11 @@
         nurl.searchParams.set('store_id', id);
         location.href = nurl;
     }
+    function set_category_filter(url, id) {
+        var nurl = new URL(url);
+        nurl.searchParams.set('category_id', id);
+        location.href = nurl;
+    }
 
     function set_time_filter(url, id) {
         var nurl = new URL(url);
@@ -336,10 +420,21 @@
         location.href = nurl;
     }
 
+    function set_customer_filter(url, id) {
+        var nurl = new URL(url);
+        nurl.searchParams.set('customer_id', id);
+        location.href = nurl;
+    }
+
+
     function set_filter(url, id, filter_by) {
         var nurl = new URL(url);
         nurl.searchParams.set(filter_by, id);
         location.href = nurl;
+        tour.next();
+    }
+    function next_tour() {
+        tour.next();
     }
 
     function copy_text(copyText) {
@@ -352,7 +447,48 @@
         });
     }
 </script>
+<script>
 
+    $(document).on('ready', function(){
+        // $('body').css('overflow','')
+        $(".direction-toggle").on("click", function () {
+            if($('html').hasClass('active')){
+                $('html').removeClass('active')
+                setDirection(1);
+            }else {
+                setDirection(0);
+                $('html').addClass('active')
+            }
+        });
+        if ($('html').attr('dir') == "rtl") {
+            $(".direction-toggle").find('span').text('Toggle LTR')
+        } else {
+            $(".direction-toggle").find('span').text('Toggle RTL')
+        }
+
+        function setDirection(status) {
+            if (status == 1) {
+                $("html").attr('dir', 'ltr');
+                $(".direction-toggle").find('span').text('Toggle RTL')
+            } else {
+                $("html").attr('dir', 'rtl');
+                $(".direction-toggle").find('span').text('Toggle LTR')
+            }
+            $.get({
+                    url: '{{ route('admin.business-settings.site_direction') }}',
+                    dataType: 'json',
+                    data: {
+                        status: status,
+                    },
+                    success: function() {
+                        alert(ok);
+                    },
+
+                });
+            }
+        });
+
+</script>
 <script>
     @php($fcm_credentials = \App\CentralLogics\Helpers::get_business_settings('fcm_credentials'))
     var firebaseConfig = {
@@ -461,27 +597,55 @@
         })
     }
 
+    var new_order_type='store_order';
+    var new_module_id=null;
 
     messaging.onMessage(function(payload) {
         console.log(payload.data);
-        var conversation_id = getUrlParameter('conversation');
-        var user_id = getUrlParameter('user');
-        var url= '{{url('/')}}/admin/message/view/'+conversation_id+'/' + user_id;
-        console.log(url);
-        $.ajax({
-            url: url,
-            success: function(data) {
-                $('#view-conversation').html(data.view);
+        if(payload.data.order_id && payload.data.type == "order_request"){
+                @php($admin_order_notification = \App\Models\BusinessSetting::where('key', 'admin_order_notification')->first())
+                @php($admin_order_notification = $admin_order_notification ? $admin_order_notification->value : 0)
+                @if (\App\CentralLogics\Helpers::module_permission_check('order') && $admin_order_notification)
+                new_order_type = payload.data.order_type
+                new_module_id = payload.data.module_id
+                playAudio();
+                $('#popup-modal').appendTo("body").modal('show');
+                @endif
+        }else{
+            var conversation_id = getUrlParameter('conversation');
+            var user_id = getUrlParameter('user');
+            var url= '{{url('/')}}/admin/message/view/'+conversation_id+'/' + user_id;
+            console.log(url);
+            $.ajax({
+                url: url,
+                success: function(data) {
+                    $('#view-conversation').html(data.view);
+                }
+            })
+            toastr.success('New message arrived', {
+                CloseButton: true,
+                ProgressBar: true
+            });
+            if($('#conversation-list').scrollTop() == 0){
+                conversationList();
             }
-        })
-        toastr.success('New message arrived', {
-            CloseButton: true,
-            ProgressBar: true
-        });
-        if($('#conversation-list').scrollTop() == 0){
-            conversationList();
         }
     });
+
+    function check_order() {
+            if(new_order_type == 'parcel')
+            {
+                var url= '{{url('/')}}/admin/parcel/orders/all?module_id=' + new_module_id;
+                location.href = url;
+            }
+            else
+            {
+                var url= '{{url('/')}}/admin/order/list/all?module_id=' + new_module_id;
+                location.href = url;
+            }
+
+        }
+
     startFCM();
     conversationList();
     if(getUrlParameter('conversation')){

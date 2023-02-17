@@ -24,7 +24,7 @@
 
     <div class="card">
         <div class="card-body">
-            <form action="{{route('admin.module.store')}}" method="post" enctype="multipart/form-data">
+            <form action="{{route('admin.business-settings.module.store')}}" method="post" enctype="multipart/form-data">
                 @csrf
                 @php($language=\App\Models\BusinessSetting::where('key','language')->first())
                 @php($language = $language->value ?? null)
@@ -85,7 +85,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-sm-6">
+                    {{-- <div class="col-sm-6">
                         <div class="form-group" id="zone_check">
                             <label class="input-label">{{ translate('Store can serve in') }} <small class="text-danger"><span class="input-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('messages.module_all_zone_hint') }}">
                                         <img src="{{ asset('/public/assets/admin/img/info-circle.svg') }}"
@@ -114,7 +114,7 @@
                                 <!-- End Custom Radio -->
                             </div>
                         </div>
-                    </div>
+                    </div> --}}
                 </div>
 
                 <div class="form-group" id="module_theme">

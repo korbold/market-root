@@ -28,6 +28,10 @@
 </head>
 
 <body class="footer-offset">
+    <div class="direction-toggle">
+        <i class="tio-settings"></i>
+        <span></span>
+    </div>
 
 <div class="container">
     <div class="row">
@@ -59,6 +63,36 @@
 <!-- JS Implementing Plugins -->
 
 @stack('script')
+<!-- Toggle Direction Init -->
+<script>
+    $(document).on('ready', function(){
+
+        $(".direction-toggle").on("click", function () {
+            setDirection(localStorage.getItem("direction"));
+        });
+
+        function setDirection(direction) {
+            if (direction == "rtl") {
+                localStorage.setItem("direction", "ltr");
+                $("html").attr('dir', 'ltr');
+            $(".direction-toggle").find('span').text('Toggle RTL')
+            } else {
+                localStorage.setItem("direction", "rtl");
+                $("html").attr('dir', 'rtl');
+            $(".direction-toggle").find('span').text('Toggle LTR')
+            }
+        }
+
+        if (localStorage.getItem("direction") == "rtl") {
+            $("html").attr('dir', "rtl");
+            $(".direction-toggle").find('span').text('Toggle LTR')
+        } else {
+            $("html").attr('dir', "ltr");
+            $(".direction-toggle").find('span').text('Toggle RTL')
+        }
+
+    })
+</script>
 <!-- JS Front -->
 <script src="{{asset('public/assets/admin')}}/js/vendor.min.js"></script>
 <script src="{{asset('public/assets/admin')}}/js/theme.min.js"></script>

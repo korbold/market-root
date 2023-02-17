@@ -10,6 +10,7 @@ use App\Models\Translation;
 use App\Models\Review;
 use Illuminate\Support\Facades\Storage;
 use App\CentralLogics\Helpers;
+use App\Models\Tag;
 
 class ItemController extends Controller
 {
@@ -53,6 +54,20 @@ class ItemController extends Controller
 
         if ($request['price'] <= $dis || count($data) < 1 || $validator->fails()) {
             return response()->json(['errors' => Helpers::error_processor($validator)], 402);
+        }
+
+        $tag_ids = [];
+        if ($request->tags != null) {
+            $tags = explode(",", $request->tags);
+        }
+        if(isset($tags)){
+            foreach ($tags as $key => $value) {
+                $tag = Tag::firstOrNew(
+                    ['tag' => $value]
+                );
+                $tag->save();
+                array_push($tag_ids,$tag->id);
+            }
         }
         
         $item = new Item;
@@ -135,6 +150,32 @@ class ItemController extends Controller
 
         //combinations end
         $item->variations = json_encode($variations);
+
+        $food_variations = [];
+        if(isset($request->options))
+        {
+            foreach(json_decode($request->options, true) as $option)
+            {
+                $temp_variation['name']= $option['name'];
+                $temp_variation['type']= $option['type'];
+                $temp_variation['min']= $option['min'] ?? 0;
+                $temp_variation['max']= $option['max'] ?? 0;
+                $temp_variation['required']= $option['required']??'off';
+                $temp_value = [];
+                foreach($option['values'] as $value)
+                {
+                    if(isset($value['label'])){
+                        $temp_option['label'] = $value['label'];
+                    }
+                    $temp_option['optionPrice'] = $value['optionPrice'];
+                    array_push($temp_value,$temp_option);
+                }
+                $temp_variation['values']= $temp_value;
+                array_push($food_variations,$temp_variation);
+            }
+        }
+        //combinations end
+        $item->food_variations = json_encode($food_variations);
         $item->price = $request->price;
         $item->image = Helpers::upload('product/', 'png', $request->file('image'));
         $item->available_time_starts = $request->available_time_starts;
@@ -150,6 +191,7 @@ class ItemController extends Controller
         $item->images = $images;
         $item->unit_id = $request->unit;
         $item->save();
+        $item->tags()->sync($tag_ids);
 
         unset($data[1]);        
         unset($data[0]);        
@@ -227,6 +269,19 @@ class ItemController extends Controller
 
         if ($request['price'] <= $dis || count($data) < 1 || $validator->fails()) {
             return response()->json(['errors' => Helpers::error_processor($validator)], 402);
+        }
+        $tag_ids = [];
+        if ($request->tags != null) {
+            $tags = explode(",", $request->tags);
+        }
+        if(isset($tags)){
+            foreach ($tags as $key => $value) {
+                $tag = Tag::firstOrNew(
+                    ['tag' => $value]
+                );
+                $tag->save();
+                array_push($tag_ids,$tag->id);
+            }
         }
 
         $p = Item::findOrFail($request->id);
@@ -322,6 +377,31 @@ class ItemController extends Controller
         } 
 
         $p->variations = json_encode($variations);
+
+        $food_variations = [];
+        if(isset($request->options))
+        {
+            foreach(json_decode($request->options,true) as $key=>$option)
+            {
+                $temp_variation['name']= $option['name'];
+                $temp_variation['type']= $option['type'];
+                $temp_variation['min']= $option['min'] ?? 0;
+                $temp_variation['max']= $option['max'] ?? 0;
+                $temp_variation['required']= $option['required']??'off';
+                $temp_value = [];
+                foreach($option['values'] as $value)
+                {
+                    if(isset($value['label'])){
+                        $temp_option['label'] = $value['label'];
+                    }
+                    $temp_option['optionPrice'] = $value['optionPrice'];
+                    array_push($temp_value,$temp_option);
+                }
+                $temp_variation['values']= $temp_value;
+                array_push($food_variations,$temp_variation);
+            }
+        }
+        $p->food_variations = json_encode($food_variations);
         $p->price = $request->price;
         $p->image = $request->has('image') ? Helpers::update('product/', $p->image, 'png', $request->file('image')) : $p->image;
         $p->available_time_starts = $request->available_time_starts;
@@ -335,6 +415,7 @@ class ItemController extends Controller
         $p->images = array_values($images);
         $p->unit_id = $request->unit;
         $p->save();
+        $p->tags()->sync($tag_ids);
 
         unset($data[1]);        
         unset($data[0]);   
@@ -403,6 +484,13 @@ class ItemController extends Controller
             foreach ($key as $value) {
                 $q->orWhere('name', 'like', "%{$value}%");
             }
+            $q->orWhereHas('tags',function($query)use($key){
+                $query->where(function($q)use($key){
+                    foreach ($key as $value) {
+                        $q->where('tag', 'like', "%{$value}%");
+                    };
+                });
+            });
         })
         ->limit(50)
         ->get();

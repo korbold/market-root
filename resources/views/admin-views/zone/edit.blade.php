@@ -21,7 +21,7 @@
             </h1>
         </div>
         <!-- End Page Header -->
-        <form action="{{route('admin.zone.update', $zone->id)}}" method="post" id="zone_form" class="shadow--card">
+        <form action="{{route('admin.business-settings.zone.update', $zone->id)}}" method="post" id="zone_form" class="shadow--card">
             @csrf
             <div class="row">
                 <div class="col-md-5">
@@ -60,7 +60,7 @@
                                     for="exampleFormControlInput1">{{translate('messages.name')}}</label>
                             <input type="text" name="name" id="name" class="form-control" placeholder="{{translate('messages.new_zone')}}" value="{{$zone->name}}" required>
                         </div>
-                        <div class="d-flex flex-wrap select--all-checkes">
+                        {{-- <div class="d-flex flex-wrap select--all-checkes">
                             <h5 class="input-label m-0 text-capitalize">{{translate('messages.Payment Method')}} </h5>
                         </div>
                         <div class="check--item-wrapper mb-1">
@@ -71,14 +71,6 @@
                                     <label class="form-check-label qcont text-dark" for="cash_on_delivery">{{translate('messages.Cash On Delivery')}}</label>
                                 </div>
                             </div>
-                            <!-- transferencia -->
-                            <div class="check-item">
-                                <div class="form-group form-check form--check">
-                                    <input type="checkbox" name="transfer_payment" value="transfer_payment" class="form-check-input"
-                                           id="transfer_payment" {{$zone->transfer_payment == 1 ?'checked':''}}>
-                                    <label class="form-check-label qcont text-dark" for="transfer_payment">{{translate('messages.transfer_payment')}}</label>
-                                </div>
-                            </div>
                             <div class="check-item">
                                 <div class="form-group form-check form--check">
                                     <input type="checkbox" name="digital_payment" value="digital_payment" class="form-check-input"
@@ -86,7 +78,7 @@
                                     <label class="form-check-label qcont text-dark" for="digital_payment">{{translate('messages.digital payment')}}</label>
                                 </div>
                             </div>
-                        </div>
+                        </div> --}}
                         <div class="form-group d-none">
                             <label class="input-label" for="exampleFormControlInput1">{{ translate('messages.Coordinates') }}<span class="input-label-secondary" title="{{translate('messages.draw_your_zone_on_the_map')}}">{{translate('messages.draw_your_zone_on_the_map')}}</span></label>
                                     <textarea type="text" name="coordinates"  id="coordinates" class="form-control">@foreach($zone->coordinates[0] as $key=>$coords)<?php if(count($zone->coordinates[0]) != $key+1) {if($key != 0) echo(','); ?>({{$coords->getLat()}}, {{$coords->getLng()}})<?php } ?>@endforeach

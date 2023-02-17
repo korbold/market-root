@@ -73,7 +73,6 @@
                                 </label>
                             </div>
                         </div>
-
                         <div class="col-sm-6 col-lg-4">
                             <div class="form-group mb-0">
                                 <label class="toggle-switch toggle-switch-sm d-flex justify-content-between border border-secondary rounded px-4 form-control" for="self_delivery_system">
@@ -109,17 +108,23 @@
                                 </label>
                             </div>
                         </div>
-                        {{-- <div class="col-sm-6 col-lg-4">
-                            <div class="form-group mb-0">
-                                <label class="toggle-switch toggle-switch-sm d-flex justify-content-between border border-secondary rounded px-4 form-control" for="free_delivery">
-                                <span class="pr-2">{{translate('messages.free_delivery')}}<span class="input-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="{{__('messages.free_delivery_toggle_hint')}}"><img src="{{asset('/public/assets/admin/img/info-circle.svg')}}" alt="{{__('messages.free_delivery_toggle_hint')}}"></span></span>
-                                    <input type="checkbox" class="toggle-switch-input" onclick="location.href='{{route('admin.store.toggle-settings',[$store->id,$store->free_delivery?0:1, 'free_delivery'])}}'" id="free_delivery" {{$store->free_delivery?'checked':''}} {{$store->self_delivery_system ? '' : 'disabled'}}>
-                                    <span class="toggle-switch-label">
-                                        <span class="toggle-switch-indicator"></span>
-                                    </span>
-                                </label>
-                            </div>
-                        </div> --}}
+                        @if ($store->module->module_type == 'pharmacy')
+                        @php($prescription_order_status = \App\Models\BusinessSetting::where('key', 'prescription_order_status')->first())
+                        @php($prescription_order_status = $prescription_order_status ? $prescription_order_status->value : 0)
+                            @if ($prescription_order_status)
+                                <div class="col-sm-6 col-lg-4">
+                                    <div class="form-group mb-0">
+                                        <label class="toggle-switch toggle-switch-sm d-flex justify-content-between border border-secondary rounded px-4 form-control" for="prescription_order">
+                                        <span class="pr-2 text-capitalize">{{translate('messages.prescription_order')}}<span class="input-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="{{__('messages.prescription_order_hint')}}"><img src="{{asset('/public/assets/admin/img/info-circle.svg')}}" alt="{{__('messages.prescription_order_hint')}}"></span></span>
+                                            <input type="checkbox" class="toggle-switch-input" onclick="location.href='{{route('admin.store.toggle-settings',[$store->id,$store->prescription_order?0:1, 'prescription_order'])}}'" id="prescription_order" {{$store->prescription_order?'checked':''}}>
+                                            <span class="toggle-switch-label">
+                                                <span class="toggle-switch-indicator"></span>
+                                            </span>
+                                        </label>
+                                    </div>
+                                </div>
+                            @endif
+                        @endif
                     </div>
                     <div class="row g-3 mt-3">
                         <form action="{{route('admin.store.update-settings',[$store['id']])}}" method="post"

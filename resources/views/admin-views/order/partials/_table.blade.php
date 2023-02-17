@@ -19,7 +19,7 @@
     </td>
     <td>
         @if($order->customer)
-            <a class="text-body text-capitalize" href="{{route('admin.customer.view',[$order['user_id']])}}">
+            <a class="text-body text-capitalize" href="{{route('admin.users.customer.view',[$order['user_id']])}}">
                 <strong>{{$order->customer['f_name'].' '.$order->customer['l_name']}}</strong>
                 <div>{{$order->customer['phone']}}</div>
             </a>
@@ -34,7 +34,7 @@
         @if ($parcel_order)
             <div>{{Str::limit($order->parcel_category?$order->parcel_category->name:translate('messages.not_found'),20,'...')}}</div>
         @elseif ($order->store)
-            <div><a  class="text--title" href="{{route('admin.store.view', $order->store_id)}}" alt="view store">{{Str::limit($order->store?$order->store->name:translate('messages.store deleted!'),20,'...')}}</a></div>
+            <div><a  class="text--title" href="{{route('admin.store.view', [$order->store_id,'module_id'=>$order['module_id']])}}" alt="view store">{{Str::limit($order->store?$order->store->name:translate('messages.store deleted!'),20,'...')}}</a></div>
         @else
             <div>{{Str::limit(translate('messages.not_found'),20,'...')}}</div>
         @endif
@@ -97,10 +97,10 @@
     </td>
     <td>
         <div class="btn--container justify-content-center">
-            <a class="ml-2 btn btn-sm btn--warning btn-outline-warning action-btn" href="{{route($parcel_order?'admin.parcel.order.details':'admin.order.details',['id'=>$order['id']])}}">
+            <a class="ml-2 btn btn-sm btn--warning btn-outline-warning action-btn" href="{{route($parcel_order?'admin.parcel.order.details':'admin.order.details',['id'=>$order['id'],'module_id'=>$order['module_id']])}}">
                 <i class="tio-invisible"></i>
             </a>
-            <a class="ml-2 btn btn-sm btn--primary btn-outline-primary action-btn" href="{{route($parcel_order?'admin.order.generate-invoice':'admin.order.generate-invoice',['id'=>$order['id']])}}">
+            <a class="ml-2 btn btn-sm btn--primary btn-outline-primary action-btn" href="{{route($parcel_order?'admin.order.generate-invoice':'admin.order.generate-invoice',['id'=>$order['id'],'module_id'=>$order['module_id']])}}">
                 <i class="tio-print"></i>
             </a>
         </div>
@@ -108,3 +108,17 @@
 </tr>
 
 @endforeach
+
+
+@if(count($orders) === 0)
+<tr>
+    <td colspan="12">
+        <div class="empty--data">
+            <img src="{{asset('/public/assets/admin/svg/illustrations/sorry.svg')}}" alt="public">
+            <h5>
+                {{translate('no_data_found')}}
+            </h5>
+        </div>
+    </td>
+</tr>
+@endif

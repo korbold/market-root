@@ -293,9 +293,12 @@
                         <div class="col-md-6 mb-4 cursor-pointer">
                             <div class="card">
                                 <div class="card-body h--100px">
-                                    <button class="btn btn-block click-if-alone" id="bKash_button" onclick="BkashPayment()">
+                                    {{-- <button class="btn btn-block click-if-alone" id="bKash_button" onclick="BkashPayment()">
                                         <img width="100" src="{{asset('public/assets/admin/img/bkash.png')}}"/>
-                                    </button>
+                                    </button> --}}
+                                    <a class="btn btn-block click-if-alone" href="{{route('bkash-make-payment',request()->getQueryString())}}">
+                                        <img class="initial--40" src="{{asset('public/assets/admin/img/bkash.png')}}"/>
+                                    </a>
                                 </div>
                             </div>
                         </div>
@@ -366,7 +369,7 @@
     }, 10)
 </script>
 
-@if(env('APP_MODE')=='live')
+{{-- @if(env('APP_MODE')=='live')
     <script id="myScript"
             src="https://scripts.pay.bka.sh/versions/1.2.0-beta/checkout/bKash-checkout.js"></script>
 @else
@@ -500,7 +503,7 @@
         }
         Swal.fire("Payment Failed!", message, "error");
     }
-</script>
+</script> --}}
 <script>
     function click_if_alone() {
         let total = $('.checkout_details .click-if-alone').length;

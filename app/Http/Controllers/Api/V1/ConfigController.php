@@ -27,7 +27,7 @@ class ConfigController extends Controller
 
     public function configuration()
     {
-        $key = ['currency_code','cash_on_delivery','digital_payment','default_location','free_delivery_over','business_name','logo','address','phone','email_address','country','currency_symbol_position','app_minimum_version_android','app_url_android','app_minimum_version_ios','app_url_ios','customer_verification','schedule_order','order_delivery_verification','per_km_shipping_charge','minimum_shipping_charge','show_dm_earning','canceled_by_deliveryman','canceled_by_store','timeformat','toggle_veg_non_veg','toggle_dm_registration','toggle_store_registration','schedule_order_slot_duration','parcel_per_km_shipping_charge','parcel_minimum_shipping_charge','web_app_landing_page_settings','footer_text','landing_page_links','loyalty_point_exchange_rate', 'loyalty_point_item_purchase_point', 'loyalty_point_status', 'loyalty_point_minimum_point', 'wallet_status', 'dm_tips_status', 'ref_earning_status','ref_earning_exchange_rate','refund_active_status','refund','cancelation','shipping_policy'];
+        $key = ['currency_code','cash_on_delivery','digital_payment','default_location','free_delivery_over','business_name','logo','address','phone','email_address','country','currency_symbol_position','app_minimum_version_android','app_url_android','app_minimum_version_ios','app_url_ios','customer_verification','schedule_order','order_delivery_verification','per_km_shipping_charge','minimum_shipping_charge','show_dm_earning','canceled_by_deliveryman','canceled_by_store','timeformat','toggle_veg_non_veg','toggle_dm_registration','toggle_store_registration','schedule_order_slot_duration','parcel_per_km_shipping_charge','parcel_minimum_shipping_charge','web_app_landing_page_settings','footer_text','landing_page_links','loyalty_point_exchange_rate', 'loyalty_point_item_purchase_point', 'loyalty_point_status', 'loyalty_point_minimum_point', 'wallet_status', 'dm_tips_status', 'ref_earning_status','ref_earning_exchange_rate','refund_active_status','refund','cancelation','shipping_policy','prescription_order_status','tax_included','icon'];
 
         $settings =  array_column(BusinessSetting::whereIn('key',$key)->get()->toArray(), 'value', 'key');
 
@@ -70,6 +70,7 @@ class ConfigController extends Controller
             // 'minimum_order_value' => (float)$settings['minimum_order_value'],
             'base_urls' => [
                 'item_image_url' => asset('storage/app/public/product'),
+                'refund_image_url' => asset('storage/app/public/refund'),
                 'customer_image_url' => asset('storage/app/public/profile'),
                 'banner_image_url' => asset('storage/app/public/banner'),
                 'category_image_url' => asset('storage/app/public/category'),
@@ -85,7 +86,7 @@ class ConfigController extends Controller
                 'order_attachment_url' => asset('storage/app/public/order'),
                 'module_image_url' => asset('storage/app/public/module'),
                 'parcel_category_image_url' => asset('storage/app/public/parcel_category'),
-                'landing_page_image_url' => asset('public/assets/landing/image')
+                'landing_page_image_url' => asset('public/assets/landing/image'),
             ],
             'country' => $settings['country'],
             'default_location'=> [ 'lat'=> $default_location?$default_location['lat']:'23.757989', 'lng'=> $default_location?$default_location['lng']:'90.360587' ],
@@ -96,6 +97,7 @@ class ConfigController extends Controller
             'app_minimum_version_ios' => (integer)$settings['app_minimum_version_ios'],
             'app_url_ios' => $settings['app_url_ios'],
             'customer_verification' => (boolean)$settings['customer_verification'],
+            'prescription_order_status' => isset($settings['prescription_order_status'])?(boolean)$settings['prescription_order_status']:false,
             'schedule_order' => (boolean)$settings['schedule_order'],
             'order_delivery_verification' => (boolean)$settings['order_delivery_verification'],
             'cash_on_delivery' => (boolean)($cod['status'] == 1 ? true : false),
@@ -125,6 +127,7 @@ class ConfigController extends Controller
             'landing_page_settings'=> isset($settings['web_app_landing_page_settings'])?json_decode($settings['web_app_landing_page_settings'], true):null,
             'social_media'=>SocialMedia::active()->get()->toArray(),
             'footer_text'=>isset($settings['footer_text'])?$settings['footer_text']:'',
+            'fav_icon' => $settings['icon'],
             'landing_page_links'=>isset($settings['landing_page_links'])?json_decode($settings['landing_page_links']):[],
             //Added Business Setting
             'dm_tips_status' => (int)(isset($settings['dm_tips_status']) ? $settings['dm_tips_status'] : 0),
@@ -138,6 +141,7 @@ class ConfigController extends Controller
             'cancelation_policy' => (int)(isset($settings['cancelation']) ? json_decode($settings['cancelation'], true)['status'] : 0),
             'shipping_policy' => (int)(isset($settings['shipping_policy']) ? json_decode($settings['shipping_policy'], true)['status'] : 0),
             'loyalty_point_minimum_point' => (int)(isset($settings['loyalty_point_minimum_point']) ? $settings['loyalty_point_minimum_point'] : 0),
+            'tax_included' => (int)(isset($settings['tax_included']) ? $settings['tax_included'] : 0),
         ]);
     }
 
@@ -152,7 +156,7 @@ class ConfigController extends Controller
             return response()->json(['errors' => Helpers::error_processor($validator)], 403);
         }
         $point = new Point($request->lat,$request->lng);
-        $zones = Zone::with('modules')->contains('coordinates', $point)->latest()->get(['id', 'status', 'cash_on_delivery', 'digital_payment', 'transfer_payment']);
+        $zones = Zone::with('modules')->contains('coordinates', $point)->latest()->get(['id', 'status', 'cash_on_delivery', 'digital_payment']);
         if(count($zones)<1)
         {
             return response()->json([

@@ -21,13 +21,13 @@
                     <!-- Nav -->
                     <ul class="nav nav-tabs nav--tabs border-0">
                         <li class="nav-item">
-                            <a class="nav-link" href="{{route('admin.delivery-man.preview', ['id'=>$dm->id, 'tab'=> 'info'])}}"  aria-disabled="true">{{translate('messages.info')}}</a>
+                            <a class="nav-link" href="{{route('admin.users.delivery-man.preview', ['id'=>$dm->id, 'tab'=> 'info'])}}"  aria-disabled="true">{{translate('messages.info')}}</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link active" href="{{route('admin.delivery-man.preview', ['id'=>$dm->id, 'tab'=> 'transaction'])}}"  aria-disabled="true">{{translate('messages.transaction')}}</a>
+                            <a class="nav-link active" href="{{route('admin.users.delivery-man.preview', ['id'=>$dm->id, 'tab'=> 'transaction'])}}"  aria-disabled="true">{{translate('messages.transaction')}}</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{{route('admin.delivery-man.preview', ['id'=>$dm->id, 'tab'=> 'conversation'])}}"  aria-disabled="true">{{translate('messages.conversations')}}</a>
+                            <a class="nav-link" href="{{route('admin.users.delivery-man.preview', ['id'=>$dm->id, 'tab'=> 'conversation'])}}"  aria-disabled="true">{{translate('messages.conversations')}}</a>
                         </li>
                     </ul>
                     <!-- End Nav -->
@@ -56,6 +56,7 @@
                                 <th class="border-0">{{translate('sl')}}</th>
                                 <th class="border-0">{{translate('messages.order')}} {{translate('messages.id')}}</th>
                                 <th class="border-0">{{translate('messages.delivery_fee')}} {{translate('messages.earned')}}</th>
+                                <th class="border-0">{{translate('messages.delivery_tips')}}</th>
                                 <th class="border-0">{{translate('messages.date')}}</th>
                             </tr>
                         </thead>
@@ -67,8 +68,9 @@
                         @foreach($digital_transaction as $k=>$dt)
                             <tr>
                                 <td scope="row">{{$k+$digital_transaction->firstItem()}}</td>
-                                <td><a href="{{route((isset($dt->order) && $dt->order->order_type=='parcel')?'admin.parcel.order.details':'admin.order.details',$dt->order_id)}}">{{$dt->order_id}}</a></td>
+                                <td><a href="{{route((isset($dt->order) && $dt->order->order_type=='parcel')?'admin.parcel.order.details':'admin.order.details',[$dt->order_id,'module_id'=>$dt->order->module_id])}}">{{$dt->order_id}}</a></td>
                                 <td>{{$dt->original_delivery_charge}}</td>
+                                <td>{{$dt->dm_tips}}</td>
                                 <td>{{$dt->created_at->format('Y-m-d')}}</td>
                             </tr>
                         @endforeach

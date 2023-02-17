@@ -90,12 +90,19 @@ class ItemController extends Controller
         })
         ->where(function ($q) use ($key) {
             foreach ($key as $value) {
-                $q->where('name', 'like', "%{$value}%");
+                $q->orWhere('name', 'like', "%{$value}%");
             }
             $q->orWhereHas('translations',function($query)use($key){
                 $query->where(function($q)use($key){
                     foreach ($key as $value) {
                         $q->where('value', 'like', "%{$value}%");
+                    };
+                });
+            });
+            $q->orWhereHas('tags',function($query)use($key){
+                $query->where(function($q)use($key){
+                    foreach ($key as $value) {
+                        $q->where('tag', 'like', "%{$value}%");
                     };
                 });
             });

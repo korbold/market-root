@@ -25,7 +25,7 @@ class CampaignController extends Controller
             whereHas('module.zones', function($query)use($zone_id){
                 $query->whereIn('zones.id', json_decode($zone_id, true));
             })
-            ->whereHas('store', function($query)use($zone_id){
+            ->whereHas('stores', function($query)use($zone_id){
                 $query->when(config('module.current_module_data'), function($query){
                     $query->where('module_id', config('module.current_module_data')['id'])->whereHas('zone.modules',function($query){
                         $query->where('modules.id', config('module.current_module_data')['id']);

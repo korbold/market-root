@@ -32,7 +32,7 @@
                                         <label class="input-label" for="exampleFormControlInput1">{{translate('messages.title')}}</label>
                                         <input type="text" name="title" class="form-control" placeholder="{{translate('messages.new_banner')}}" required>
                                     </div>
-
+                                {{-- 
                                     <div class="form-group">
                                         <label class="input-label">{{translate('messages.module')}}</label>
                                         <select name="module_id" required
@@ -42,7 +42,7 @@
                                                 <option value="{{$module->id}}">{{$module->module_name}}</option>
                                             @endforeach
                                         </select>
-                                    </div>
+                                    </div> --}}
 
                                     <div class="form-group">
                                         <label class="input-label" for="title">{{translate('messages.zone')}}</label>
@@ -255,7 +255,7 @@
 </script>
 <script>
     var zone_id = [];
-    var module_id = 0;
+    var module_id = {{Config::get('module.current_module_id')}};
 
     function get_items()
     {
@@ -276,13 +276,8 @@
     }
     $(document).on('ready', function () {
 
-        $('#module_select').on('change', function(){
-            if($(this).val())
-            {
-                module_id = $(this).val();
-                get_items();
-            }
-        });
+        module_id = {{Config::get('module.current_module_id')}};
+        get_items();
 
         $('#zone').on('change', function(){
             if($(this).val())

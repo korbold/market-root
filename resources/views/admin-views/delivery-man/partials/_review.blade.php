@@ -4,14 +4,14 @@
         <td>{{$key+1}}</td>
         <td>
         <span class="d-block font-size-sm text-body">
-            <a href="{{route('admin.delivery-man.preview',[$review['delivery_man_id']])}}">
+            <a href="{{route('admin.users.delivery-man.preview',[$review['delivery_man_id']])}}">
                 {{$review->delivery_man->f_name.' '.$review->delivery_man->l_name}}
             </a>
         </span>
         </td>
         <td>
             @if ($review->customer)
-            <a href="{{route('admin.customer.view',[$review->user_id])}}">
+            <a href="{{route('admin.users.customer.view',[$review->user_id])}}">
                 {{$review->customer?$review->customer->f_name:""}} {{$review->customer?$review->customer->l_name:""}}
             </a>
             @else
@@ -34,7 +34,7 @@
                     <span class="toggle-switch-indicator"></span>
                 </span>
             </label>
-            <form action="{{route('admin.delivery-man.reviews.status',[$review['id'],$review->status?0:1])}}" method="get" id="status-{{$review['id']}}">
+            <form action="{{route('admin.users.delivery-man.reviews.status',[$review['id'],$review->status?0:1])}}" method="get" id="status-{{$review['id']}}">
             </form>
         </td>
     </tr>

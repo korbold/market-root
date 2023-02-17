@@ -168,7 +168,7 @@ div.code-toolbar {
 div.code-toolbar > .toolbar {
     position: absolute;
     top: 1.0625rem;
-    right: 0.75rem;
+    inset-inline-end: 0.75rem;
     transition: opacity 0.3s ease-in-out;
 }
 
@@ -260,7 +260,7 @@ div.code-toolbar > .prism-light + .toolbar span:focus {
 }
 
 .anchorjs-link {
-    padding-left: 0.5rem;
+    padding-inline-start: 0.5rem;
     font-size: 90%;
     color: rgba(55, 125, 255, 0.5) !important;
     transition: color 0.16s linear;
@@ -320,8 +320,8 @@ div.code-toolbar > .prism-light + .toolbar span:focus {
 
 @media (min-width: 1200px) {
     .navbar-vertical-aside-show-xl.splitted-content .docs-navbar.navbar {
-        margin-left: 0 !important;
-        padding-left: 0 !important;
+        margin-inline-start: 0 !important;
+        padding-inline-start: 0 !important;
     }
 
     .navbar-expand-lg .navbar-brand-wrapper-width {
@@ -344,7 +344,7 @@ div.code-toolbar > .prism-light + .toolbar span:focus {
 }
 
 .docs-navbar-vertical-aside {
-    margin-left: 0 !important;
+    margin-inline-start: 0 !important;
 }
 
 /*------------------------------------

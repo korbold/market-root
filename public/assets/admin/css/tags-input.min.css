@@ -48,7 +48,7 @@
 .bootstrap-tagsinput .tag [data-role="remove"] {
     box-shadow: none !important;
     cursor: pointer;
-    margin-left: 8px
+    margin-inline-start: 8px
 }
 
 .bootstrap-tagsinput .tag [data-role="remove"]:after {

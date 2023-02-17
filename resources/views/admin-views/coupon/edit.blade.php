@@ -50,8 +50,8 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="col-md-4 col-lg-3 col-sm-6">
-                            <div class="form-group m-0 " id="store_wise">
+                        <div class="col-md-4 col-lg-3 col-sm-6" id="store_wise">
+                            <div class="form-group m-0 ">
                                     <label class="input-label" for="exampleFormControlSelect1">{{translate('messages.store')}}<span
                                             class="input-label-secondary"></span></label>
                                     <select name="store_ids[]" class="js-data-example-ajax form-control"  title="Select Restaurant">
@@ -65,16 +65,18 @@
                                     @endif
                                     </select>
                                 </div>
-                                <div class="form-group m-0 " id="zone_wise">
-                                    <label class="input-label" for="exampleFormControlInput1">{{translate('messages.select')}} {{translate('messages.zone')}}</label>
-                                    <select name="zone_ids[]" id="choice_zones"
-                                        class="form-control js-select2-custom"
-                                        multiple="multiple" placeholder="{{translate('messages.select_zone')}}">
-                                    @foreach(\App\Models\Zone::all() as $zone)
-                                        <option value="{{$zone->id}}" {{($coupon->coupon_type=='zone_wise'&&json_decode($coupon->data))?(in_array($zone->id, json_decode($coupon->data))?'selected':''):''}}>{{$zone->name}}</option>
-                                    @endforeach
-                                    </select>
-                                </div>
+                        </div>
+                        <div class="col-md-4 col-lg-3 col-sm-6"  id="zone_wise">
+                            <div class="form-group m-0 ">
+                                <label class="input-label" for="exampleFormControlInput1">{{translate('messages.select')}} {{translate('messages.zone')}}</label>
+                                <select name="zone_ids[]" id="choice_zones"
+                                    class="form-control js-select2-custom"
+                                    multiple="multiple" placeholder="{{translate('messages.select_zone')}}">
+                                @foreach(\App\Models\Zone::all() as $zone)
+                                    <option value="{{$zone->id}}" {{($coupon->coupon_type=='zone_wise'&&json_decode($coupon->data))?(in_array($zone->id, json_decode($coupon->data))?'selected':''):''}}>{{$zone->name}}</option>
+                                @endforeach
+                                </select>
+                            </div>
                         </div>
                         <div class="col-md-4 col-lg-3 col-sm-6">
                             <div class="form-group m-0">

@@ -29,7 +29,7 @@
                     @if(!isset(auth('admin')->user()->zone_id))
                     <div class="col-sm-auto min--240">
                         <select name="zone_id" class="form-control js-select2-custom"
-                                onchange="set_zone_filter('{{route('admin.delivery-man.list')}}', this.value)">
+                                onchange="set_zone_filter('{{route('admin.users.delivery-man.list')}}', this.value)">
                             <option value="all">{{ translate('messages.All Zones') }}</option>
                             @foreach(\App\Models\Zone::orderBy('name')->get() as $z)
                                 <option
@@ -79,13 +79,13 @@
                             <div class="dropdown-divider"></div> --}}
                             <span class="dropdown-header">{{ translate('messages.download') }}
                                 {{ translate('messages.options') }}</span>
-                            <a id="export-excel" class="dropdown-item" href="{{route('admin.delivery-man.export', ['type'=>'excel',request()->getQueryString()])}}">
+                            <a id="export-excel" class="dropdown-item" href="{{route('admin.users.delivery-man.export', ['type'=>'excel',request()->getQueryString()])}}">
                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                     src="{{ asset('public/assets/admin') }}/svg/components/excel.svg"
                                     alt="Image Description">
                                 {{ translate('messages.excel') }}
                             </a>
-                            <a id="export-csv" class="dropdown-item" href="{{route('admin.delivery-man.export', ['type'=>'csv',request()->getQueryString()])}}">
+                            <a id="export-csv" class="dropdown-item" href="{{route('admin.users.delivery-man.export', ['type'=>'csv',request()->getQueryString()])}}">
                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                     src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                     alt="Image Description">
@@ -130,7 +130,7 @@
                         <tr>
                             <td>{{$key+$delivery_men->firstItem()}}</td>
                             <td>
-                                <a class="table-rest-info" href="{{route('admin.delivery-man.preview',[$dm['id']])}}">
+                                <a class="table-rest-info" href="{{route('admin.users.delivery-man.preview',[$dm['id']])}}">
                                     <img onerror="this.src='{{asset('public/assets/admin/img/160x160/img1.jpg')}}'"
                                             src="{{asset('storage/app/public/delivery-man')}}/{{$dm['image']}}" alt="{{$dm['f_name']}} {{$dm['l_name']}}">
                                     <div class="info">
@@ -177,11 +177,11 @@
                             </td>
                             <td>
                                 <div class="btn--container justify-content-center">
-                                    <a class="btn action-btn btn--primary btn-outline-primary" href="{{route('admin.delivery-man.edit',[$dm['id']])}}" title="{{translate('messages.edit')}}"><i class="tio-edit"></i>
+                                    <a class="btn action-btn btn--primary btn-outline-primary" href="{{route('admin.users.delivery-man.edit',[$dm['id']])}}" title="{{translate('messages.edit')}}"><i class="tio-edit"></i>
                                         </a>
                                         <a class="btn action-btn btn--danger btn-outline-danger" href="javascript:" onclick="form_alert('delivery-man-{{$dm['id']}}','{{ translate('Want to remove this deliveryman ?') }}')" title="{{translate('messages.delete')}}"><i class="tio-delete-outlined"></i>
                                     </a>
-                                    <form action="{{route('admin.delivery-man.delete',[$dm['id']])}}" method="post" id="delivery-man-{{$dm['id']}}">
+                                    <form action="{{route('admin.users.delivery-man.delete',[$dm['id']])}}" method="post" id="delivery-man-{{$dm['id']}}">
                                         @csrf @method('delete')
                                     </form>
                                 </div>
@@ -266,7 +266,7 @@
                 }
             });
             $.post({
-                url: '{{route('admin.delivery-man.search')}}',
+                url: '{{route('admin.users.delivery-man.search')}}',
                 data: formData,
                 cache: false,
                 contentType: false,

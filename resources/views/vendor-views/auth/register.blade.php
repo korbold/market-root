@@ -28,12 +28,12 @@
         }
 
         .cover-photo {
-            margin-left: 150px;
+            margin-inline-start: 150px;
         }
 
         .restaurant-logo {
-            margin-left: 100px;
-            margin-right: 150px;
+            margin-inline-start: 100px;
+            margin-inline-end: 150px;
         }
 
     </style>

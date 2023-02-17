@@ -36,7 +36,8 @@ class Store extends Model
         'veg'=>'integer',
         'non_veg'=>'integer',
         'order_place_to_schedule_interval'=>'integer',
-        'featured'=>'integer'
+        'featured'=>'integer',
+        'prescription_order'=>'boolean'
     ];
 
     protected $appends = ['gst_status','gst_code'];

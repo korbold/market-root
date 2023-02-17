@@ -72,11 +72,11 @@
                                     @php($amount=array_sum($earning))
                                     <span class="h5 m-0 mr-3 fz--11 d-flex align-items-center mb-2 mb-md-0">
                                         <span class="legend-indicator chart-bg-2"></span>
-                                        {{translate('messages.total_earning')}} : {{\App\CentralLogics\Helpers::format_currency(array_sum($earning))}}
+                                        {{translate('messages.total_earning')}} : <span>{{\App\CentralLogics\Helpers::format_currency(array_sum($earning))}}</span>
                                     </span>
                                     <span class="h5 m-0 fz--11 d-flex align-items-center mb-2 mb-md-0">
                                         <span class="legend-indicator chart-bg-3"></span>
-                                        {{translate('messages.commission_given')}} : {{\App\CentralLogics\Helpers::format_currency(array_sum($commission))}}
+                                        {{translate('messages.commission_given')}} : <span>{{\App\CentralLogics\Helpers::format_currency(array_sum($commission))}}</span>
                                     </span>
                                 </div>
 
@@ -108,8 +108,8 @@
                               },
                               {
                                 "data": [{{$commission[1]}},{{$commission[2]}},{{$commission[3]}},{{$commission[4]}},{{$commission[5]}},{{$commission[6]}},{{$commission[7]}},{{$commission[8]}},{{$commission[9]}},{{$commission[10]}},{{$commission[11]}},{{$commission[12]}}],
-                                "backgroundColor": "#d9f1f1",
-                                "borderColor": "#d9f1f1"
+                                "backgroundColor": "#b9e0e0",
+                                "borderColor": "#b9e0e0"
                               }]
                             },
                             "options": {

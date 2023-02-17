@@ -1,35 +1,29 @@
 <!-- Header -->
-<div class="card-header align-items-center flex-wrap">
-    <h5 class="card-header-title">
-        <i class="tio-users-switch"></i> {{translate('messages.top_customers')}}
+<div class="card-header border-0 order-header-shadow">
+    <h5 class="card-title d-flex justify-content-between">
+        <span>{{translate('messages.top_customers')}}</span>
     </h5>
-    @php($params=session('dash_params'))
-    @if($params['zone_id']!='all')
-        @php($zone_name=\App\Models\Zone::where('id',$params['zone_id'])->first()->name)
-    @else
-        @php($zone_name = translate('messages.all'))
-    @endif
-    <label class="badge badge-soft-info">{{translate('messages.zone')}} : {{$zone_name}}</label>
+        <a href="{{ route('admin.users.customer.list') }}" class="fz-12px font-medium text-006AE5">{{translate('view_all')}}</a>
 </div>
 <!-- End Header -->
 
 <!-- Body -->
 <div class="card-body">
-    <div class="row">
-        @foreach($top_customer as $key=>$item)
-            <div class="col-6 col-md-4 mt-2 initial--27"
-                 onclick="location.href='{{route('admin.customer.view',[$item['user_id']])}}'">
-                <div class="grid-card min-height-170">
-                    <label class="label_1">Orders : {{$item['count']}}</label>
-                    <center class="mt-6">
-                        <img class="img--60 img--circle" onerror="this.src='{{asset('public/assets/admin/img/160x160/img1.jpg')}}'" src="{{asset('storage/app/public/profile/'.$item->customer->image??'')}}">
-                    </center>
-                    <div class="text-center mt-2">
-                        <span class="fz--10">{{$item->customer['f_name']??'Not exist'}}</span>
-                    </div>
+    <div class="top--selling">
+        
+            @foreach($top_customers as $key=>$item)
+            <a class="grid--card" href="{{route('admin.users.customer.view',[$item['id']])}}">
+                <img onerror="this.src='{{asset('public/assets/admin/img/160x160/img1.jpg')}}'" src="{{asset('storage/app/public/profile/'.$item->image??'')}}">
+                <div class="cont pt-2">
+                    <h6 class="mb-1">{{$item['f_name']?? translate('Not exist')}}</h6>
+                    <span>{{$item['phone']??''}}</span>
                 </div>
-            </div>
-        @endforeach
+                <div class="ml-auto">
+                    <span class="badge badge-soft">{{ translate('Orders') }} : {{$item['order_count']}}</span>
+                </div>
+            </a>
+            @endforeach
+
     </div>
 </div>
 <!-- End Body -->

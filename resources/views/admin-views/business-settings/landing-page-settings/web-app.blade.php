@@ -37,7 +37,7 @@
             @php($web_app_landing_page_settings = isset($web_app_landing_page_settings->value)?json_decode($web_app_landing_page_settings->value, true):null)
 
             <div class="row gy-4">
-                <div class="col-sm-6 col-xl-3">
+                <div class="col-sm-6 col-xl-4">
                     <form action="{{route('admin.business-settings.landing-page-settings', 'web-app')}}" method="POST" enctype="multipart/form-data">
                         @csrf
                         <label class="form-group d-block">
@@ -58,7 +58,7 @@
                         </div>
                     </form>
                 </div>
-                <div class="col-sm-6 col-xl-3">
+                <div class="col-sm-6 col-xl-4">
                     <form action="{{route('admin.business-settings.landing-page-settings', 'web-app')}}" method="POST" enctype="multipart/form-data">
                             @csrf
                         <label class="form-group d-block">

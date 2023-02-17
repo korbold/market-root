@@ -131,6 +131,13 @@
                             <label class="form-check-label qcont" for="pos">{{translate('messages.pos')}}</label>
                         </div>
                     </div>
+                    <div class="check-item">
+                        <div class="form-group form-check form--check">
+                            <input type="checkbox" name="modules[]" value="chat" class="form-check-input"
+                                    id="chat" {{in_array('chat',(array)json_decode($role['modules']))?'checked':''}}>
+                            <label class="form-check-label qcont" for="chat">{{translate('messages.chat')}}</label>
+                        </div>
+                    </div>
                 </div>
                 <div class="btn--container justify-content-end mt-4">
                     <button type="reset" class="btn btn--reset">{{translate('messages.reset')}}</button>

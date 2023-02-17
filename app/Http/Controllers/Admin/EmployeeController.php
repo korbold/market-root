@@ -52,7 +52,7 @@ class EmployeeController extends Controller
         ]);
 
         Toastr::success(translate('messages.employee_added_successfully'));
-        return redirect()->route('admin.employee.list');
+        return redirect()->route('admin.users.employee.list');
     }
 
     function list()
@@ -115,7 +115,7 @@ class EmployeeController extends Controller
         $e->save();
 
         Toastr::success(translate('messages.employee_updated_successfully'));
-        return redirect()->route('admin.employee.list');
+        return redirect()->route('admin.users.employee.list');
     }
 
     public function distroy($id)

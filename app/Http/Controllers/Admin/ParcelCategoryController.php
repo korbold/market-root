@@ -9,6 +9,7 @@ use App\Models\Translation;
 use Illuminate\Http\Request;
 use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Config;
 
 class ParcelCategoryController extends Controller
 {
@@ -19,7 +20,7 @@ class ParcelCategoryController extends Controller
      */
     public function index(Request $request)
     {
-        $module_id = $request->query('module_id');
+        $module_id = Config::get('module.current_module_id');
         $parcel_categories = ParcelCategory::
         when($module_id, function($query)use($module_id){
             $query->Module($module_id);
@@ -58,7 +59,7 @@ class ParcelCategoryController extends Controller
         ]);
 
         $parcel_category = new ParcelCategory;
-        $parcel_category->module_id = $request->module_id;
+        $parcel_category->module_id = Config::get('module.current_module_id');
         $parcel_category->name = $request->name[array_search('en', $request->lang)];
         $parcel_category->description =  $request->description[array_search('en', $request->lang)];
         $parcel_category->image = Helpers::upload('parcel_category/', 'png', $request->file('image'));
@@ -135,7 +136,7 @@ class ParcelCategoryController extends Controller
         ]);
 
         $parcel_category = ParcelCategory::findOrFail($id);
-        $parcel_category->module_id = $request->module_id;
+        // $parcel_category->module_id = $request->module_id;
         $parcel_category->name = $request->name[array_search('en', $request->lang)];
         $parcel_category->description =  $request->description[array_search('en', $request->lang)];
         $parcel_category->image = Helpers::update('parcel_category/', $parcel_category->image, 'png', $request->file('image'));

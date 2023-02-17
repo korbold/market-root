@@ -22,12 +22,12 @@
 
                 <div class="col-sm-auto">
                     <a class="btn btn-icon btn-sm btn-soft-secondary rounded-circle mr-1"
-                       href="{{route('admin.customer.view',[$customer['id']-1])}}"
+                       href="{{route('admin.users.customer.view',[$customer['id']-1])}}"
                        data-toggle="tooltip" data-placement="top" title="Previous customer">
                         <i class="tio-arrow-backward"></i>
                     </a>
                     <a class="btn btn-icon btn-sm btn-soft-secondary rounded-circle"
-                       href="{{route('admin.customer.view',[$customer['id']+1])}}" data-toggle="tooltip"
+                       href="{{route('admin.users.customer.view',[$customer['id']+1])}}" data-toggle="tooltip"
                        data-placement="top" title="Next customer">
                         <i class="tio-arrow-forward"></i>
                     </a>
@@ -98,7 +98,7 @@
                                         </div>
                                     </td>
                                     <td class="table-column-pl-0 text-center">
-                                        <a href="{{route((isset($order) && $order->order_type=='parcel')?'admin.parcel.order.details':'admin.order.details',['id'=>$order['id']])}}">{{$order['id']}}</a>
+                                        <a href="{{route((isset($order) && $order->order_type=='parcel')?'admin.parcel.order.details':'admin.order.details',['id'=>$order['id'],'module_id'=>$order['module_id']])}}">{{$order['id']}}</a>
                                     </td>
                                     <td>
                                         <div class="text-right mw--85px mx-auto">
@@ -138,7 +138,7 @@
                 <div class="card">
                     <!-- Header -->
                     <div class="card-header">
-                        <h4 class="card-header-title">
+                        <h4 class="card-title">
                             <span class="card-header-icon">
                                 <i class="tio-user"></i>
                             </span>
@@ -156,17 +156,17 @@
                                 </div>
                                 <div class="media-body">
                                     <ul class="list-unstyled m-0">
-                                        <li class="pb-1">
+                                        <li class="pb-1 d-flex align-items-center">
                                             <i class="tio-email mr-2"></i>
-                                            {{$customer['email']}}
+                                            <span>{{$customer['email']}}</span>
                                         </li>
-                                        <li class="pb-1">
+                                        <li class="pb-1 d-flex align-items-center">
                                             <i class="tio-call-talking-quiet mr-2"></i>
-                                            {{$customer['phone']}}
+                                            <span>{{$customer['phone']}}</span>
                                         </li>
-                                        <li class="pb-1">
+                                        <li class="pb-1 d-flex align-items-center">
                                             <i class="tio-shopping-basket-outlined mr-2"></i>
-                                            {{$customer->order_count}} {{translate('messages.orders')}}
+                                            <span>{{$customer->order_count}} {{translate('messages.orders')}}</span>
                                         </li>
                                     </ul>
                                 </div>
@@ -180,18 +180,18 @@
                                     <h5>{{translate('messages.addresses')}}</h5>
                                 </div>
                                 <ul class="list-unstyled list-unstyled-py-2">
-                                    <li>
+                                    <li class="d-flex align-items-center">
                                         <i class="tio-tab mr-2"></i>
-                                        {{$address['address_type']}}
+                                        <span>{{$address['address_type']}}</span>
                                     </li>
                                     @if($address['contact_person_umber'])
-                                    <li>
+                                    <li class="d-flex align-items-center">
                                         <i class="tio-android-phone-vs mr-2"></i>
-                                        {{$address['contact_person_number']}}
+                                        <span>{{$address['contact_person_number']}}</span>
                                     </li>
                                     @endif
                                     <li>
-                                        <a target="_blank" href="http://maps.google.com/maps?z=12&t=m&q=loc:{{$address['latitude']}}+{{$address['longitude']}}" class="text--hover">
+                                        <a target="_blank" href="http://maps.google.com/maps?z=12&t=m&q=loc:{{$address['latitude']}}+{{$address['longitude']}}" class="d-flex align-items-center">
                                             <i class="tio-poi mr-2"></i>
                                             {{$address['address']}}
                                         </a>

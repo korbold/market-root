@@ -68,4 +68,10 @@ class User extends Authenticatable
     {
         return $this->hasOne(UserInfo::class,'user_id', 'id');
     }
+
+    public function scopeZone($query, $zone_id=null){
+        $query->when(is_numeric($zone_id), function ($q) use ($zone_id) {
+            return $q->where('zone_id', $zone_id);
+        });
+    }
 }

@@ -29,7 +29,7 @@
                                         <input type="text" name="title" class="form-control" placeholder="{{translate('messages.new_coupon')}}" required maxlength="191">
                                     </div>
                                 </div>
-                                <div class="col-md-4 col-lg-3 col-sm-6">
+                                {{-- <div class="col-md-4 col-lg-3 col-sm-6">
                                     <div class="form-group">
                                         <label class="input-label">{{translate('messages.module')}}</label>
                                         <select name="module_id" required class="form-control js-select2-custom"  data-placeholder="{{translate('messages.select')}} {{translate('messages.module')}}" id="module_select">
@@ -39,7 +39,7 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                </div>
+                                </div> --}}
                                 <div class="col-md-4 col-lg-3 col-sm-6">
                                     <div class="form-group">
                                         <label class="input-label" for="exampleFormControlInput1">{{translate('messages.coupon')}} {{translate('messages.type')}}</label>
@@ -52,14 +52,16 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div class="col-md-4 col-lg-3 col-sm-6" >
-                                    <div class="form-group" id="store_wise">
+                                <div class="col-md-4 col-lg-3 col-sm-6" id="store_wise">
+                                    <div class="form-group">
                                         <label class="input-label" for="exampleFormControlSelect1">{{translate('messages.store')}}<span
                                                 class="input-label-secondary"></span></label>
                                         <select name="store_ids[]" id="store_id" class="js-data-example-ajax form-control" data-placeholder="{{translate('messages.select_store')}}" title="{{translate('messages.select_store')}}">
                                         </select>
                                     </div>
-                                    <div class="form-group" id="zone_wise">
+                                </div>
+                                <div class="col-md-4 col-lg-3 col-sm-6" id="zone_wise">
+                                    <div class="form-group">
                                         <label class="input-label" for="exampleFormControlInput1">{{translate('messages.select')}} {{translate('messages.zone')}}</label>
                                         <select name="zone_ids[]" id="choice_zones"
                                             class="form-control js-select2-custom"
@@ -98,7 +100,7 @@
                                 <div class="col-md-4 col-lg-3 col-sm-6">
                                     <div class="form-group">
                                         <label class="input-label" for="exampleFormControlInput1">{{translate('messages.discount')}} {{translate('messages.type')}}</label>
-                                        <select name="discount_type" class="form-control" id="discount_type">
+                                        <select name="discount_type" class="form-control" id="discount_type" required>
                                             <option value="amount">{{translate('messages.amount')}}</option>
                                             <option value="percent">{{translate('messages.percent')}}</option>
                                         </select>
@@ -281,13 +283,13 @@
         $('#date_from').attr('min',(new Date()).toISOString().split('T')[0]);
         $('#date_to').attr('min',(new Date()).toISOString().split('T')[0]);
 
-        var module_id = 0;
-        $('#module_select').on('change', function(){
-            if($(this).val())
-            {
-                module_id = $(this).val();
-            }
-        });
+        var module_id = {{Config::get('module.current_module_id')}};
+        // $('#module_select').on('change', function(){
+        //     if($(this).val())
+        //     {
+        //         module_id = $(this).val();
+        //     }
+        // });
 
         $('.js-data-example-ajax').select2({
             ajax: {
@@ -377,6 +379,7 @@
             else{
                 $('#max_discount').removeAttr("readonly");
                 $('#discount_type').removeAttr("disabled");
+                $('#discount_type').attr("required","true");
                 $('#discount').removeAttr("readonly");
             }
         }

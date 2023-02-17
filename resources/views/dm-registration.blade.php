@@ -1,7 +1,7 @@
 @extends('layouts.landing.app')
 @section('title', translate('messages.deliveryman_registration'))
 @push('css_or_js')
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.13/css/intlTelInput.css"/>
+    <link rel="stylesheet" href="{{asset('/public/assets/admin/css/intlTelInput.css')}}"/>
 @endpush
 
 @section('content')

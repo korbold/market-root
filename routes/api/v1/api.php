@@ -100,6 +100,7 @@ Route::group(['namespace' => 'Api\V1', 'middleware'=>'localization'], function (
         Route::get('completed-orders', 'VendorController@get_completed_orders');
         Route::get('all-orders', 'VendorController@get_all_orders');
         Route::put('update-order-status', 'VendorController@update_order_status');
+        Route::put('update-order-amount', 'VendorController@edit_order_amount');
         Route::get('order-details', 'VendorController@get_order_details');
         Route::get('order', 'VendorController@get_order');
         Route::put('update-fcm-token', 'VendorController@update_fcm_token');
@@ -208,6 +209,7 @@ Route::group(['namespace' => 'Api\V1', 'middleware'=>'localization'], function (
                 Route::get('running-orders', 'OrderController@get_running_orders');
                 Route::get('details', 'OrderController@get_order_details');
                 Route::post('place', 'OrderController@place_order');
+                Route::post('prescription/place', 'OrderController@prescription_place_order');
                 Route::put('cancel', 'OrderController@cancel_order');
                 Route::post('refund-request', 'OrderController@refund_request');
                 Route::get('refund-reasons', 'OrderController@refund_reasons');

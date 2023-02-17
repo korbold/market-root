@@ -2,19 +2,20 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Http\Request;
 use App\Models\Banner;
-use Brian2694\Toastr\Facades\Toastr;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\Request;
 use App\CentralLogics\Helpers;
+use App\Http\Controllers\Controller;
+use Brian2694\Toastr\Facades\Toastr;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 
 class BannerController extends Controller
 {
     function index()
     {
-        $banners = Banner::with('module')->latest()->paginate(config('default_pagination'));
+        $banners = Banner::with('module')->where('module_id', Config::get('module.current_module_id'))->latest()->paginate(config('default_pagination'));
         return view('admin-views.banner.index', compact('banners'));
     }
 
@@ -27,7 +28,6 @@ class BannerController extends Controller
             'zone_id' => 'required',
             'store_id' => 'required_if:banner_type,store_wise',
             'item_id' => 'required_if:banner_type,item_wise',
-            'module_id'=>'required'
         ], [
             'zone_id.required' => translate('messages.select_a_zone'),
             'store_id.required_if'=> translate('messages.store is required when banner type is store wise'),
@@ -44,7 +44,7 @@ class BannerController extends Controller
         $banner->zone_id = $request->zone_id;
         $banner->image = Helpers::upload('banner/', 'png', $request->file('image'));
         $banner->data = ($request->banner_type == 'store_wise')?$request->store_id:(($request->banner_type == 'item_wise')?$request->item_id:'');
-        $banner->module_id = $request->module_id;
+        $banner->module_id = Config::get('module.current_module_id');
         $banner->default_link = $request->default_link;
         $banner->save();
 
@@ -116,7 +116,7 @@ class BannerController extends Controller
 
     public function search(Request $request){
         $key = explode(' ', $request['search']);
-        $banners=Banner::where(function ($q) use ($key) {
+        $banners=Banner::where('module_id', Config::get('module.current_module_id'))->where(function ($q) use ($key) {
             foreach ($key as $value) {
                 $q->orWhere('title', 'like', "%{$value}%");
             }

@@ -79,7 +79,7 @@
                 <tr>
                     <th>
                         <div style="font-weight: 400;font-size: 11px;line-height: 22px;color: #242A30;"><span
-                                style="margin-right:5px;"> <a href="tel:{{ $company_phone }}"
+                                style="margin-inline-end:5px;"> <a href="tel:{{ $company_phone }}"
                                     style="text-decoration: none; color: inherit;">{{ translate('messages.phone') }}:
                                     {{ $company_phone }}</a></span> <span><a href="mailto:{{ $company_email }}"
                                     style="text-decoration: none; color: inherit;">{{ translate('messages.email') }}:

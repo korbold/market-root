@@ -56,7 +56,7 @@
                             <span class="input-label-secondary">*</span></label>
                         <select id="exampleFormControlSelect1" name="parent_id" class="form-control js-select2-custom" required>
                             <option value="" selected disabled>{{translate('Select Main Category')}}</option>
-                            @foreach(\App\Models\Category::with('module')->where(['position'=>0])->get() as $cat)
+                            @foreach(\App\Models\Category::with('module')->where(['position'=>0])->module(Config::get('module.current_module_id'))->get() as $cat)
                                 <option value="{{$cat['id']}}" {{isset($category)?($category['parent_id']==$cat['id']?'selected':''):''}} >{{$cat['name']}} ({{Str::limit($cat->module->module_name, 15, '...')}})</option>
                             @endforeach
                         </select>

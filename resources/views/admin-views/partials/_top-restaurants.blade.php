@@ -1,7 +1,7 @@
 <!-- Header -->
-<div class="card-header align-items-center flex-wrap">
-    <h5 class="card-header-title">
-        <i class="tio-medal"></i> {{translate('messages.top_stores')}}
+<div class="card-header border-0 order-header-shadow">
+    <h5 class="card-title d-flex justify-content-between">
+        {{translate('top selling stores')}}
     </h5>
     @php($params=session('dash_params'))
     @if($params['zone_id']!='all')
@@ -9,27 +9,23 @@
     @else
         @php($zone_name = translate('messages.all'))
     @endif
-    <label class="badge badge-soft-primary">{{translate('messages.zone')}} : {{$zone_name}}</label>
+    {{--<label class="badge badge-soft-primary">{{translate('messages.zone')}} : {{$zone_name}}</label>--}}
+        <a href="{{ route('admin.store.list') }}" class="fz-12px font-medium text-006AE5">{{translate('view_all')}}</a>
 </div>
 <!-- End Header -->
 
 <!-- Body -->
-<div class="card-body">
-    <div class="top--resturant">
+<div class="card-body __top-resturant-card">
+    <div class="__top-resturant">
         @foreach($top_restaurants as $key=>$item)
-        <li>
-            <div class="top--resturant-item cursor-pointer" onclick="location.href='{{route('admin.store.view', $item->id)}}'">
+        <a href="{{route('admin.store.view', $item->id)}}">
+            <div class="position-relative overflow-hidden">
                 <img onerror="this.src='{{asset('public/assets/admin/img/100x100/1.png')}}'" src="{{asset('storage/app/public/store')}}/{{$item['logo']}}">
-                <div class="top--resturant-item-content">
-                    <h5 class="name mt-0 mb-2">
-                        {{Str::limit($item->name??translate('messages.store deleted!'), 20, '...')}}
-                    </h5>
-                    <h5 class="info m-0">
-                        {{$item['order_count']}} <i class="tio-shopping-cart text-primary"></i>
-                    </h5>
-                </div>
+                <h5 class="info m-0">
+                    {{translate('order : ')}} {{$item['order_count']}}
+                </h5>
             </div>
-        </li>
+        </a>
         @endforeach
     </div>
 </div>

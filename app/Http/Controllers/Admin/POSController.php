@@ -15,11 +15,13 @@ use App\CentralLogics\CustomerLogic;
 use App\CentralLogics\ProductLogic;
 use App\Models\Store;
 use App\Mail\PlaceOrder;
+use App\Models\BusinessSetting;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Mail;
 use App\Scopes\StoreScope;
+use Illuminate\Support\Facades\Config;
 
 class POSController extends Controller
 {
@@ -27,9 +29,9 @@ class POSController extends Controller
     {
         $time = Carbon::now()->toTimeString();
         $category = $request->query('category_id', 0);
-        $module_id = $request->query('module_id', null);
+        $module_id = Config::get('module.current_module_id');
         $store_id = $request->query('store_id', null);
-        $categories = Category::active()->module($module_id)->get();
+        $categories = Category::active()->module(Config::get('module.current_module_id'))->get();
         $store = Store::active()->find($store_id);
         $keyword = $request->query('keyword', false);
         $key = explode(' ', $keyword);
@@ -88,36 +90,55 @@ class POSController extends Controller
     public function variant_price(Request $request)
     {
         $product = Item::withoutGlobalScope(StoreScope::class)->with('store')->find($request->id);
-        $str = '';
-        $quantity = 0;
-        $price = 0;
-        $addon_price = 0;
-
-        foreach (json_decode($product->choice_options) as $key => $choice) {
-            if ($str != null) {
-                $str .= '-' . str_replace(' ', '', $request[$choice->name]);
-            } else {
-                $str .= str_replace(' ', '', $request[$choice->name]);
-            }
-        }
-
-        if($request['addon_id'])
-        {
-            foreach($request['addon_id'] as $id)
-            {
-                $addon_price+= $request['addon-price'.$id]*$request['addon-quantity'.$id];
-            }
-        }
-
-        if ($str != null) {
-            $count = count(json_decode($product->variations));
-            for ($i = 0; $i < $count; $i++) {
-                if (json_decode($product->variations)[$i]->type == $str) {
-                    $price = json_decode($product->variations)[$i]->price - Helpers::product_discount_calculate($product, json_decode($product->variations)[$i]->price,$product->store);
+        if($product->module->module_type == 'food'){
+            $price = $product->price;
+            $addon_price = 0;
+            if ($request['addon_id']) {
+                foreach ($request['addon_id'] as $id) {
+                    $addon_price += $request['addon-price' . $id] * $request['addon-quantity' . $id];
                 }
             }
-        } else {
-            $price = $product->price - Helpers::product_discount_calculate($product, $product->price,$product->store);
+            $product_variations = json_decode($product->food_variations, true);
+            if ($request->variations && count($product_variations)) {
+
+                $price_total =  $price + Helpers::food_variation_price($product_variations, $request->variations);
+                $price= $price_total - Helpers::product_discount_calculate($product, $price_total, $product->store);
+            } else {
+                $price = $product->price - Helpers::product_discount_calculate($product, $product->price, $product->store);
+            }
+        }else{
+
+            $str = '';
+            $quantity = 0;
+            $price = 0;
+            $addon_price = 0;
+    
+            foreach (json_decode($product->choice_options) as $key => $choice) {
+                if ($str != null) {
+                    $str .= '-' . str_replace(' ', '', $request[$choice->name]);
+                } else {
+                    $str .= str_replace(' ', '', $request[$choice->name]);
+                }
+            }
+    
+            if($request['addon_id'])
+            {
+                foreach($request['addon_id'] as $id)
+                {
+                    $addon_price+= $request['addon-price'.$id]*$request['addon-quantity'.$id];
+                }
+            }
+    
+            if ($str != null) {
+                $count = count(json_decode($product->variations));
+                for ($i = 0; $i < $count; $i++) {
+                    if (json_decode($product->variations)[$i]->type == $str) {
+                        $price = json_decode($product->variations)[$i]->price - Helpers::product_discount_calculate($product, json_decode($product->variations)[$i]->price,$product->store);
+                    }
+                }
+            } else {
+                $price = $product->price - Helpers::product_discount_calculate($product, $product->price,$product->store);
+            }
         }
 
         return array('price' => Helpers::format_currency(($price * $request->quantity)+$addon_price));
@@ -164,93 +185,168 @@ class POSController extends Controller
     {
         $product = Item::withoutGlobalScope(StoreScope::class)->with('store')->find($request->id);
 
-        $data = array();
-        $data['id'] = $product->id;
-        $str = '';
-        $variations = [];
-        $price = 0;
-        $addon_price = 0;
-
-        //Gets all the choice values of customer choice option and generate a string like Black-S-Cotton
-        foreach (json_decode($product->choice_options) as $key => $choice) {
-            $data[$choice->name] = $request[$choice->name];
-            $variations[$choice->title] = $request[$choice->name];
-            if ($str != null) {
-                $str .= '-' . str_replace(' ', '', $request[$choice->name]);
-            } else {
-                $str .= str_replace(' ', '', $request[$choice->name]);
-            }
-        }
-        $data['variations'] = $variations;
-        $data['variant'] = $str;
-        if ($request->session()->has('cart') && !isset($request->cart_item_key)) {
-            if (count($request->session()->get('cart')) > 0) {
-                foreach ($request->session()->get('cart') as $key => $cartItem) {
-                    if (is_array($cartItem) && $cartItem['id'] == $request['id'] && $cartItem['variant'] == $str) {
+        if($product->module->module_type == 'food'){
+            $data = array();
+            $data['id'] = $product->id;
+            $str = '';
+            $variations = [];
+            $price = 0;
+            $addon_price = 0;
+            $variation_price=0;
+    
+            $product_variations = json_decode($product->food_variations, true);
+            if ($request->variations && count($product_variations)) {
+                foreach($request->variations  as $key=> $value ){
+    
+                    if($value['required'] == 'on' &&  isset($value['values']) == false){
                         return response()->json([
-                            'data' => 1
+                            'data' => 'variation_error',
+                            'message' => translate('Please select items from') . ' ' . $value['name'],
+                        ]);
+                    }
+                    if(isset($value['values'])  && $value['min'] != 0 && $value['min'] > count($value['values']['label'])){
+                        return response()->json([
+                            'data' => 'variation_error',
+                            'message' => translate('Please select minimum ').$value['min'].translate(' For ').$value['name'].'.',
+                        ]);
+                    }
+                    if(isset($value['values']) && $value['max'] != 0 && $value['max'] < count($value['values']['label'])){
+                        return response()->json([
+                            'data' => 'variation_error',
+                            'message' => translate('Please select maximum ').$value['max'].translate(' For ').$value['name'].'.',
                         ]);
                     }
                 }
-
+                $variation_data = Helpers::get_varient($product_variations, $request->variations);
+                $variation_price = $variation_data['price'];
+                $variations = $request->variations;
             }
-        }
-        //Check the string and decreases quantity for the stock
-        if ($str != null) {
-            $count = count(json_decode($product->variations));
-            for ($i = 0; $i < $count; $i++) {
-                if (json_decode($product->variations)[$i]->type == $str) {
-                    $price = json_decode($product->variations)[$i]->price;
-                    $data['variations'] = json_decode($product->variations, true)[$i];
+            $data['variations'] = $variations;
+            $data['variant'] = $str;
+    
+            $price = $product->price + $variation_price;
+            $data['variation_price'] = $variation_price;
+            $data['quantity'] = $request['quantity'];
+            $data['price'] = $price;
+            $data['name'] = $product->name;
+            $data['discount'] = Helpers::product_discount_calculate($product, $price, $product->store);
+            $data['image'] = $product->image;
+            $data['add_ons'] = [];
+            $data['add_on_qtys'] = [];
+    
+            if ($request['addon_id']) {
+                foreach ($request['addon_id'] as $id) {
+                    $addon_price += $request['addon-price' . $id] * $request['addon-quantity' . $id];
+                    $data['add_on_qtys'][] = $request['addon-quantity' . $id];
+                }
+                $data['add_ons'] = $request['addon_id'];
+            }
+    
+            $data['addon_price'] = $addon_price;
+    
+            if ($request->session()->has('cart')) {
+                $cart = $request->session()->get('cart', collect([]));
+                if (isset($request->cart_item_key)) {
+                    $cart[$request->cart_item_key] = $data;
+                    $data = 2;
+                } else {
+                    $cart->push($data);
+                }
+            } else {
+                $cart = collect([$data,'store_id'=>$product->store_id]);
+                $request->session()->put('cart', $cart);
+            }
+        }else{
+
+            $data = array();
+            $data['id'] = $product->id;
+            $str = '';
+            $variations = [];
+            $price = 0;
+            $addon_price = 0;
+    
+            //Gets all the choice values of customer choice option and generate a string like Black-S-Cotton
+            foreach (json_decode($product->choice_options) as $key => $choice) {
+                $data[$choice->name] = $request[$choice->name];
+                $variations[$choice->title] = $request[$choice->name];
+                if ($str != null) {
+                    $str .= '-' . str_replace(' ', '', $request[$choice->name]);
+                } else {
+                    $str .= str_replace(' ', '', $request[$choice->name]);
                 }
             }
-        } else {
-            $price = $product->price;
+            $data['variations'] = $variations;
+            $data['variant'] = $str;
+            if ($request->session()->has('cart') && !isset($request->cart_item_key)) {
+                if (count($request->session()->get('cart')) > 0) {
+                    foreach ($request->session()->get('cart') as $key => $cartItem) {
+                        if (is_array($cartItem) && $cartItem['id'] == $request['id'] && $cartItem['variant'] == $str) {
+                            return response()->json([
+                                'data' => 1
+                            ]);
+                        }
+                    }
+    
+                }
+            }
+            //Check the string and decreases quantity for the stock
+            if ($str != null) {
+                $count = count(json_decode($product->variations));
+                for ($i = 0; $i < $count; $i++) {
+                    if (json_decode($product->variations)[$i]->type == $str) {
+                        $price = json_decode($product->variations)[$i]->price;
+                        $data['variations'] = json_decode($product->variations, true)[$i];
+                    }
+                }
+            } else {
+                $price = $product->price;
+            }
+    
+            $data['quantity'] = $request['quantity'];
+            $data['price'] = $price;
+            $data['name'] = $product->name;
+            $data['discount'] = Helpers::product_discount_calculate($product, $price,$product->store);
+            $data['image'] = $product->image;
+            $data['add_ons'] = [];
+            $data['add_on_qtys'] = [];
+    
+            if($request['addon_id'])
+            {
+                foreach($request['addon_id'] as $id)
+                {
+                    $addon_price+= $request['addon-price'.$id]*$request['addon-quantity'.$id];
+                    $data['add_on_qtys'][]=$request['addon-quantity'.$id];
+                }
+                $data['add_ons'] = $request['addon_id'];
+            }
+    
+            $data['addon_price'] = $addon_price;
+    
+            if ($request->session()->has('cart')) {
+                $cart = $request->session()->get('cart', collect([]));
+    
+                if(!isset($cart['store_id']) || $cart['store_id'] != $product->store_id) {
+                    return response()->json([
+                        'data' => -1
+                    ]);
+                }
+                if(isset($request->cart_item_key))
+                {
+                    $cart[$request->cart_item_key] = $data;
+                    $data = 2;
+                }
+                else
+                {
+                    $cart->push($data);
+                }
+    
+            } else {
+                $cart = collect([$data]);
+                $cart->put('store_id', $product->store_id);
+                $request->session()->put('cart', $cart);
+            }
         }
 
-        $data['quantity'] = $request['quantity'];
-        $data['price'] = $price;
-        $data['name'] = $product->name;
-        $data['discount'] = Helpers::product_discount_calculate($product, $price,$product->store);
-        $data['image'] = $product->image;
-        $data['add_ons'] = [];
-        $data['add_on_qtys'] = [];
-
-        if($request['addon_id'])
-        {
-            foreach($request['addon_id'] as $id)
-            {
-                $addon_price+= $request['addon-price'.$id]*$request['addon-quantity'.$id];
-                $data['add_on_qtys'][]=$request['addon-quantity'.$id];
-            }
-            $data['add_ons'] = $request['addon_id'];
-        }
-
-        $data['addon_price'] = $addon_price;
-
-        if ($request->session()->has('cart')) {
-            $cart = $request->session()->get('cart', collect([]));
-
-            if(!isset($cart['store_id']) || $cart['store_id'] != $product->store_id) {
-                return response()->json([
-                    'data' => -1
-                ]);
-            }
-            if(isset($request->cart_item_key))
-            {
-                $cart[$request->cart_item_key] = $data;
-                $data = 2;
-            }
-            else
-            {
-                $cart->push($data);
-            }
-
-        } else {
-            $cart = collect([$data]);
-            $cart->put('store_id', $product->store_id);
-            $request->session()->put('cart', $cart);
-        }
 
         return response()->json([
             'data' => $data
@@ -405,54 +501,89 @@ class POSController extends Controller
             {
                 $product = Item::withoutGlobalScope(StoreScope::class)->find($c['id']);
                 if ($product) {
-                    if (count(json_decode($product['variations'], true)) > 0) {
-                        $variant_data = Helpers::variation_price($product, json_encode([$c['variations']]));
-                        $price = $variant_data['price'];
-                        $stock = $variant_data['stock'];
-                    } else {
-                        $price = $product['price'];
-                        $stock = $product->stock;
-                    }
-
-                    if(config('module.'.$product->module->module_type)['stock'])
-                    {
-                        if($c['quantity']>$stock)
-                        {
-                            Toastr::error(translate('messages.product_out_of_stock_warning',['item'=>$product->name]));
-                            return back();
+                    if($product->module->module_type == 'food'){
+                        if ($product->food_variations) {
+                            $variation_data = Helpers::get_varient(json_decode($product->food_variations, true), $c['variations']);
+                            $variations = $variation_data['variations'];
+                        }else{
+                            $variations = [];
                         }
-
-                        $product_data[]=[
-                            'item'=>clone $product,
-                            'quantity'=>$c['quantity'],
-                            'variant'=>count($c['variations'])>0?$c['variations']['type']:null
+                        $price = $c['price'];
+                        $product->tax = $product->store->tax;
+                        $product = Helpers::product_data_formatting($product);
+                        $addon_data = Helpers::calculate_addon_price(\App\Models\AddOn::withOutGlobalScope(StoreScope::class)->whereIn('id', $c['add_ons'])->get(), $c['add_on_qtys']);
+                        $or_d = [
+                            'item_id' => $c['id'],
+                            'item_campaign_id' => null,
+                            'item_details' => json_encode($product),
+                            'quantity' => $c['quantity'],
+                            'price' => $price,
+                            'tax_amount' => Helpers::tax_calculate($product, $price),
+                            'discount_on_item' => Helpers::product_discount_calculate($product, $price, $product->store),
+                            'discount_type' => 'discount_on_product',
+                            'variant' => '',
+                            'variation' => isset($variations)?json_encode($variations):json_encode([]),
+                            // 'variation' => json_encode(count($c['variations']) ? $c['variations'] : []),
+                            'add_ons' => json_encode($addon_data['addons']),
+                            'total_add_on_price' => $addon_data['total_add_on_price'],
+                            'created_at' => now(),
+                            'updated_at' => now()
                         ];
-                    }
+                        $total_addon_price += $or_d['total_add_on_price'];
+                        $product_price += $price * $or_d['quantity'];
+                        $store_discount_amount += $or_d['discount_on_item'] * $or_d['quantity'];
+                        $order_details[] = $or_d;
+                    }else{
 
-                    $price = $c['price'];
-                    $product->tax = $store->tax;
-                    $product = Helpers::product_data_formatting($product);
-                    $addon_data = Helpers::calculate_addon_price(\App\Models\AddOn::whereIn('id',$c['add_ons'])->get(), $c['add_on_qtys']);
-                    $or_d = [
-                        'item_id' => $c['id'],
-                        'item_campaign_id' => null,
-                        'item_details' => json_encode($product),
-                        'quantity' => $c['quantity'],
-                        'price' => $price,
-                        'tax_amount' => Helpers::tax_calculate($product, $price),
-                        'discount_on_item' => Helpers::product_discount_calculate($product, $price, $store),
-                        'discount_type' => 'discount_on_product',
-                        'variant' => json_encode($c['variant']),
-                        'variation' => json_encode(count($c['variations']) ? [$c['variations']] : []),
-                        'add_ons' => json_encode($addon_data['addons']),
-                        'total_add_on_price' => $addon_data['total_add_on_price'],
-                        'created_at' => now(),
-                        'updated_at' => now()
-                    ];
-                    $total_addon_price += $or_d['total_add_on_price'];
-                    $product_price += $price*$or_d['quantity'];
-                    $store_discount_amount += $or_d['discount_on_item']*$or_d['quantity'];
-                    $order_details[] = $or_d;
+                        if (count(json_decode($product['variations'], true)) > 0) {
+                            $variant_data = Helpers::variation_price($product, json_encode([$c['variations']]));
+                            $price = $variant_data['price'];
+                            $stock = $variant_data['stock'];
+                        } else {
+                            $price = $product['price'];
+                            $stock = $product->stock;
+                        }
+    
+                        if(config('module.'.$product->module->module_type)['stock'])
+                        {
+                            if($c['quantity']>$stock)
+                            {
+                                Toastr::error(translate('messages.product_out_of_stock_warning',['item'=>$product->name]));
+                                return back();
+                            }
+    
+                            $product_data[]=[
+                                'item'=>clone $product,
+                                'quantity'=>$c['quantity'],
+                                'variant'=>count($c['variations'])>0?$c['variations']['type']:null
+                            ];
+                        }
+    
+                        $price = $c['price'];
+                        $product->tax = $store->tax;
+                        $product = Helpers::product_data_formatting($product);
+                        $addon_data = Helpers::calculate_addon_price(\App\Models\AddOn::withoutGlobalScope(StoreScope::class)->whereIn('id',$c['add_ons'])->get(), $c['add_on_qtys']);
+                        $or_d = [
+                            'item_id' => $c['id'],
+                            'item_campaign_id' => null,
+                            'item_details' => json_encode($product),
+                            'quantity' => $c['quantity'],
+                            'price' => $price,
+                            'tax_amount' => Helpers::tax_calculate($product, $price),
+                            'discount_on_item' => Helpers::product_discount_calculate($product, $price, $store),
+                            'discount_type' => 'discount_on_product',
+                            'variant' => json_encode($c['variant']),
+                            'variation' => json_encode(count($c['variations']) ? [$c['variations']] : []),
+                            'add_ons' => json_encode($addon_data['addons']),
+                            'total_add_on_price' => $addon_data['total_add_on_price'],
+                            'created_at' => now(),
+                            'updated_at' => now()
+                        ];
+                        $total_addon_price += $or_d['total_add_on_price'];
+                        $product_price += $price*$or_d['quantity'];
+                        $store_discount_amount += $or_d['discount_on_item']*$or_d['quantity'];
+                        $order_details[] = $or_d;
+                    }
                 }
             }
         }
@@ -465,12 +596,22 @@ class POSController extends Controller
 
         $total_price = $product_price + $total_addon_price - $store_discount_amount;
         $tax = isset($cart['tax'])?$cart['tax']:$store->tax;
-        $total_tax_amount= ($tax > 0)?(($total_price * $tax)/100):0;
+        // $total_tax_amount= ($tax > 0)?(($total_price * $tax)/100):0;
+
+        $order->tax_status = 'excluded';
+
+        $tax_included =BusinessSetting::where(['key'=>'tax_included'])->first() ?  BusinessSetting::where(['key'=>'tax_included'])->first()->value : 0;
+        if ($tax_included ==  1){
+            $order->tax_status = 'included';
+        }
+
+        $total_tax_amount=Helpers::product_tax($total_price,$tax,$order->tax_status =='included');
+        $tax_a=$order->tax_status =='included'?0:$total_tax_amount;
 
         try {
             $order->store_discount_amount= $store_discount_amount;
             $order->total_tax_amount= $total_tax_amount;
-            $order->order_amount = $total_price + $total_tax_amount + $order->delivery_charge;
+            $order->order_amount = $total_price + $tax_a + $order->delivery_charge;
             $order->adjusment = $request->amount - ($total_price + $total_tax_amount + $order->delivery_charge);
             $order->payment_method = $request->type == 'wallet'?'wallet':'cash_on_delivery';
             if($request->type == 'wallet'){

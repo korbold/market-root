@@ -21,21 +21,22 @@
                         </span>
                     </h1>
                 </div>
-
-                <div class="min--280 max-sm-flex-grow-1">
-                    <!-- Select -->
-                    <select name="zone_id" class="form-control js-select2-custom"
-                            onchange="set_filter('{{url()->full()}}',this.value,'module_id')" title="{{translate('messages.select')}} {{translate('messages.modules')}}">
-                        <option value="" {{!request('module_id') ? 'selected':''}}>{{translate('messages.all')}} {{translate('messages.modules')}}</option>
-                        @foreach (\App\Models\Module::notParcel()->get() as $module)
-                            <option
-                                value="{{$module->id}}" {{request('module_id') == $module->id?'selected':''}}>
-                                {{$module['module_name']}}
-                            </option>
-                        @endforeach
-                    </select>
-                    <!-- End Select -->
-                </div>
+                @if(isset($module_section_type))
+                    <div class="min--280 max-sm-flex-grow-1">
+                        <!-- Select -->
+                        <select name="zone_id" class="form-control js-select2-custom"
+                                onchange="set_filter('{{url()->full()}}',this.value,'module_id')" title="{{translate('messages.select')}} {{translate('messages.modules')}}">
+                            <option value="" {{!request('module_id') ? 'selected':''}}>{{translate('messages.all')}} {{translate('messages.modules')}}</option>
+                            @foreach (\App\Models\Module::notParcel()->where('module_type',$module_section_type)->get() as $module)
+                                <option
+                                    value="{{$module->id}}" {{request('module_id') == $module->id?'selected':''}}>
+                                    {{$module['module_name']}}
+                                </option>
+                            @endforeach
+                        </select>
+                        <!-- End Select -->
+                    </div>
+                @endif
             </div>
             <!-- End Row -->
         </div>
@@ -52,6 +53,7 @@
                             <input id="datatableSearch_" type="search" name="search" class="form-control h--40px"
                                     placeholder="{{ translate('messages.Ex:') }} 10010" aria-label="{{translate('messages.search')}}" required>
                             <input type="hidden" name="parcel_order" value="0">
+                            <input type="hidden" name="module_section_type" value="{{isset($module)?$module:''}}">
                             <button type="submit" class="btn btn--secondary"><i class="tio-search"></i></button>
 
                         </div>
@@ -289,19 +291,19 @@
                                 {{$key+$orders->firstItem()}}
                             </td>
                             <td class="table-column-pl-0">
-                                <a href="{{route('admin.order.details',['id'=>$order['id']])}}">{{$order['id']}}</a>
+                                <a href="{{route('admin.order.details',['id'=>$order['id'],'module_id'=>$order['module_id']])}}">{{$order['id']}}</a>
                             </td>
                             <td>{{date('d M Y',strtotime($order['created_at']))}}</td>
                             <td>
                                 @if($order->customer)
                                     <a class="text-body text-capitalize"
-                                       href="{{route('admin.customer.view',[$order['user_id']])}}">{{$order->customer['f_name'].' '.$order->customer['l_name']}}</a>
+                                       href="{{route('admin.users.customer.view',[$order['user_id']])}}">{{$order->customer['f_name'].' '.$order->customer['l_name']}}</a>
                                 @else
                                     <label class="badge badge-danger">{{translate('messages.invalid')}} {{translate('messages.customer')}} {{translate('messages.data')}}</label>
                                 @endif
                             </td>
                             <td>
-                                <div>{{$order->store?$order->store->name:'Restaurant deleted!'}}</div>
+                                <div>{{$order->store?$order->store->name:'Store deleted!'}}</div>
                             </td>
                             <td>
                                 <div class="text-right mw--85px">
@@ -357,12 +359,18 @@
                             </td>
                             <td>
                                 <div class="btn--container justify-content-center">
-                                <a class="btn action-btn btn--warning btn-outline-warning" href="{{route('admin.order.details',['id'=>$order['id']])}}"><i
-                                                class="tio-visible-outlined"></i></a>
-                                <a class="btn action-btn btn--primary btn-outline-primary" target="_blank" href="{{route('admin.order.generate-invoice',[$order['id']])}}"><i
-                                                class="tio-download"></i></a>
+                                    <a class="btn action-btn btn--warning btn-outline-warning" href="{{route('admin.order.details',['id'=>$order['id'],'module_id'=>$order['module_id']])}}"><i
+                                        class="tio-visible-outlined"></i></a>
+                                    @if (Request::is('admin/dispatch*'))
+                                        <a class="btn action-btn btn--primary btn-outline-primary" target="_blank" href="{{route('admin.dispatch.order.generate-invoice',[$order['id']])}}"><i
+                                                    class="tio-download"></i></a>
+                                    @else
+                                        <a class="btn action-btn btn--primary btn-outline-primary" target="_blank" href="{{route('admin.order.generate-invoice',[$order['id']])}}"><i
+                                                    class="tio-download"></i></a>
+                                    @endif
                                 </div>
                             </td>
+                                
                         </tr>
 
                     @endforeach
@@ -739,6 +747,7 @@
                 success: function (data) {
                     $('#set-rows').html(data.view);
                     $('.card-footer').hide();
+                    $('.page-area').hide();
                 },
                 complete: function () {
                     $('#loading').hide();

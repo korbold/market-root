@@ -349,6 +349,7 @@
                         q: params.term, // search term
                         all:true,
                         module_type:'food',
+                        module_id:{{Config::get('module.current_module_id')}},
                         page: params.page
                     };
                 },
@@ -375,6 +376,7 @@
                     return {
                         q: params.term, // search term
                         module_type:'food',
+                        module_id:{{Config::get('module.current_module_id')}},
                         page: params.page
                     };
                 },
