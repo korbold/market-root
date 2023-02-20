@@ -116,7 +116,7 @@ class BusinessSettingsController extends Controller
         DB::table('business_settings')->updateOrInsert(['key' => 'site_direction'], [
             'value' => $request['site_direction']
         ]);
-        
+
         DB::table('business_settings')->updateOrInsert(['key' => 'icon'], [
             'value' => $image_name
         ]);
@@ -309,7 +309,27 @@ class BusinessSettingsController extends Controller
             Toastr::info(translate('messages.update_option_is_disable_for_demo'));
             return back();
         }
-        if ($name == 'cash_on_delivery') {
+        if ($name == 'transfer_payment') {
+            $payment = BusinessSetting::where('key', 'transfer_payment')->first();
+            if (isset($payment) == false) {
+                DB::table('business_settings')->insert([
+                    'key'        => 'transfer_payment',
+                    'value'      => json_encode([
+                        'status' => $request['status'],
+                    ]),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            } else {
+                DB::table('business_settings')->where(['key' => 'transfer_payment'])->update([
+                    'key'        => 'transfer_payment',
+                    'value'      => json_encode([
+                        'status' => $request['status'],
+                    ]),
+                    'updated_at' => now(),
+                ]);
+            }
+        }else if ($name == 'cash_on_delivery') {
             $payment = BusinessSetting::where('key', 'cash_on_delivery')->first();
             if (isset($payment) == false) {
                 DB::table('business_settings')->insert([
@@ -1300,12 +1320,12 @@ class BusinessSettingsController extends Controller
         }
         if($request->module_type != 'parcel'){
 
-        
+
             $notification = NotificationMessage::where('module_type',$request->module_type)->where('key','order_processing_message')->first();
             if($notification == null){
                 $notification = new NotificationMessage();
             }
-    
+
             $notification->key = 'order_processing_message';
             $notification->module_type = $request->module_type;
             $notification->message = $request->processing_message[array_search('en', $request->lang)];
@@ -1372,7 +1392,7 @@ class BusinessSettingsController extends Controller
                     );
                 }
             }
-            
+
             $notification = NotificationMessage::where('module_type',$request->module_type)->where('key','refund_request_canceled')->first();
 
             if($notification == null){
@@ -1398,8 +1418,8 @@ class BusinessSettingsController extends Controller
                 }
             }
         }
-    
-    
+
+
         $notification = NotificationMessage::where('module_type',$request->module_type)->where('key','out_for_delivery_message')->first();
         if($notification == null){
             $notification = new NotificationMessage();
@@ -1423,7 +1443,7 @@ class BusinessSettingsController extends Controller
                 );
             }
         }
-    
+
         $notification = NotificationMessage::where('module_type',$request->module_type)->where('key','order_delivered_message')->first();
         if($notification == null){
             $notification = new NotificationMessage();
@@ -1447,7 +1467,7 @@ class BusinessSettingsController extends Controller
                 );
             }
         }
-    
+
         $notification = NotificationMessage::where('module_type',$request->module_type)->where('key','delivery_boy_assign_message')->first();
         if($notification == null){
             $notification = new NotificationMessage();
@@ -1471,7 +1491,7 @@ class BusinessSettingsController extends Controller
                 );
             }
         }
-    
+
         $notification = NotificationMessage::where('module_type',$request->module_type)->where('key','delivery_boy_delivered_message')->first();
         if($notification == null){
             $notification = new NotificationMessage();
@@ -1495,7 +1515,7 @@ class BusinessSettingsController extends Controller
                 );
             }
         }
-    
+
         $notification = NotificationMessage::where('module_type',$request->module_type)->where('key','order_cancled_message')->first();
         if($notification == null){
             $notification = new NotificationMessage();

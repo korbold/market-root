@@ -42,6 +42,13 @@
                                 <label class="form-check-label qcont text-dark" for="digital_payment">{{translate('messages.digital payment')}}</label>
                             </div>
                         </div>
+                        <div class="check-item">
+                            <div class="form-group form-check form--check">
+                                <input type="checkbox" name="transfer_payment" value="transfer_payment" class="form-check-input"
+                                       id="transfer_payment" {{$zone->transfer_payment == 1 ?'checked':''}}>
+                                <label class="form-check-label qcont text-dark" for="transfer_payment">{{translate('messages.transfer_payment')}}</label>
+                            </div>
+                        </div>
                     </div>
                     <div class="form-group mb-0">
                         <label class="input-label" for="exampleFormControlSelect1">{{ translate('messages.module') }}<span

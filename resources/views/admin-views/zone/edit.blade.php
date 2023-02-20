@@ -78,6 +78,13 @@
                                     <label class="form-check-label qcont text-dark" for="digital_payment">{{translate('messages.digital payment')}}</label>
                                 </div>
                             </div>
+                            <div class="check-item">
+                                <div class="form-group form-check form--check">
+                                    <input type="checkbox" name="transfer_payment" value="transfer_payment" class="form-check-input"
+                                           id="transfer_payment" {{$zone->transfer_payment == 1 ?'checked':''}}>
+                                    <label class="form-check-label qcont text-dark" for="transfer_payment">{{translate('messages.digital payment')}}</label>
+                                </div>
+                            </div>
                         </div> --}}
                         <div class="form-group d-none">
                             <label class="input-label" for="exampleFormControlInput1">{{ translate('messages.Coordinates') }}<span class="input-label-secondary" title="{{translate('messages.draw_your_zone_on_the_map')}}">{{translate('messages.draw_your_zone_on_the_map')}}</span></label>

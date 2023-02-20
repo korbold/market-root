@@ -79,6 +79,13 @@
                                             <label class="form-check-label qcont text-dark" for="digital_payment">{{translate('messages.digital payment')}}</label>
                                         </div>
                                     </div>
+                                    <div class="check-item">
+                                        <div class="form-group form-check form--check">
+                                            <input type="checkbox" name="transfer_payment" value="transfer_payment" class="form-check-input"
+                                                   id="transfer_payment">
+                                            <label class="form-check-label qcont text-dark" for="transfer_payment">{{translate('messages.transfer_payment')}}</label>
+                                        </div>
+                                    </div>
                                 </div> --}}
                                 <div class="form-group mb-3 d-none">
                                     <label class="input-label"
@@ -205,6 +212,7 @@
                                 <th class="border-0" >{{translate('messages.status')}}</th>
                                 <th class="border-0" >{{translate('messages.digital_payment')}}</th>
                                 <th class="border-0" >{{translate('messages.cash_on_delivery')}}</th>
+                                <th class="border-0" >{{translate('messages.transfer_payment')}}</th>
                                 <th class="border-0 text-center" >{{translate('messages.action')}}</th>
                             </tr>
                             </thead>
@@ -248,7 +256,17 @@
                                                 <span class="toggle-switch-indicator"></span>
                                             </span>
                                         </label>
-                                        <form action="{{route('admin.zone.cash-on-delivery',[$zone['id'],$zone->cash_on_delivery?0:1])}}" method="get" id="cash_on_delivery-{{$zone['id']}}">
+                                        <form action="{{route('admin.zone.cash-on-delivery',[$zone['id'],$zone->transfer_payment?0:1])}}" method="get" id="cash_on_delivery-{{$zone['id']}}">
+                                        </form>
+                                    </td>
+                                    <td>
+                                        <label class="toggle-switch toggle-switch-sm" for="transfer-paymentCheckbox{{$zone->id}}">
+                                            <input type="checkbox" onclick="status_form_alert('transfer_payment-{{$zone['id']}}','{{ translate('Want to change tranfer payment for this zone ?') }}', event)" class="toggle-switch-input" id="transfer-paymentCheckbox{{$zone->id}}" {{$zone->transfer_payment?'checked':''}}>
+                                            <span class="toggle-switch-label">
+                                                <span class="toggle-switch-indicator"></span>
+                                            </span>
+                                        </label>
+                                        <form action="{{route('admin.zone.transfer_payment',[$zone['id'],$zone->transfer_payment?0:1])}}" method="get" id="transfer_payment-{{$zone['id']}}">
                                         </form>
                                     </td>
                                     <td>

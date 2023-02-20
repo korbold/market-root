@@ -2496,4 +2496,7 @@
   'default language can not be updated! to update change the default language first!' => 'Default language can not be updated! to update change the default language first!',
   'Food Setup' => 'Food Setup',
   'Comida' => 'Comida',
+  'transfer payment' => 'Transfer payment',
+  'Order Type' => 'Order Type',
+  'New message arrived' => 'New message arrived',
 );

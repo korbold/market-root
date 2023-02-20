@@ -446,7 +446,13 @@ class OrderController extends Controller
             }
             OrderLogic::refund_before_delivered($order);
         }
-        $order->order_status = $request->order_status;
+        if ($request->order_status == 'confirmed' && $order->payment_method == 'transfer_payment') {
+            $order->payment_status = 'paid';
+            $order->order_status = $request->order_status;
+        } else {
+            $order->order_status = $request->order_status;
+        }
+
         $order[$request->order_status] = now();
         $order->save();
 
@@ -906,11 +912,11 @@ class OrderController extends Controller
                     if ($c['item_campaign_id'] != null) {
                         $product = ItemCampaign::find($c['item_campaign_id']);
                         if ($product) {
-    
+
                             $price = $c['price'];
-    
+
                             $product = Helpers::product_data_formatting($product);
-    
+
                             $c->item_details = json_encode($product);
                             $c->updated_at = now();
                             if (isset($c->id)) {
@@ -934,7 +940,7 @@ class OrderController extends Controller
                             } else {
                                 $c->save();
                             }
-    
+
                             $total_addon_price += $c['total_add_on_price'];
                             $product_price += $price * $c['quantity'];
                             $store_discount_amount += $c['discount_on_item'] * $c['quantity'];
@@ -948,9 +954,9 @@ class OrderController extends Controller
                         $product = Item::find($c['item_id']);
                         if ($product) {
                             $price = $c['price'];
-    
+
                             $product = Helpers::product_data_formatting($product);
-    
+
                             $c->item_details = json_encode($product);
                             $c->updated_at = now();
                             if (isset($c->id)) {
@@ -974,7 +980,7 @@ class OrderController extends Controller
                             } else {
                                 $c->save();
                             }
-    
+
                             $total_addon_price += $c['total_add_on_price'];
                             $product_price += $price * $c['quantity'];
                             $store_discount_amount += $c['discount_on_item'] * $c['quantity'];

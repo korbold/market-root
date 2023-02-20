@@ -213,6 +213,7 @@
                             <span>{{ translate('messages.Wallet') }}
                                 ({{ count($order_payment_methods)>0?\App\CentralLogics\Helpers::number_format_short(isset($order_payment_methods[2])?$order_payment_methods[2]->total_order_amount:0):0 }})</span>
                         </div>
+                        <!-- TODO: PENDIENTE TRANSFER -->
                     </div>
                 </div>
             </div>

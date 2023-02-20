@@ -63,6 +63,37 @@
                         </h5>
                     </div>
                     <div class="card-body pt-3">
+                        @php($config=\App\CentralLogics\Helpers::get_business_settings('transfer_payment'))
+                        <form action="{{route('admin.business-settings.payment-method-update',['transfer_payment'])}}"
+                              method="post">
+                            @csrf
+
+                            <h5 class="text-capitalize mb-3">{{translate('messages.transfer_payment')}}</h5>
+                            <div class="d-flex flex-wrap p-0">
+                                <label class="form-check form--check mr-2 mr-md-4">
+                                    <input class="form-check-input" type="radio" name="status" value="1" {{$config?($config['status']==1?'checked':''):''}}>
+                                    <span class="form-check-label">{{translate('messages.active')}}</span>
+                                </label>
+                                <label class="form-check form--check">
+                                    <input class="form-check-input" type="radio" name="status" value="0" {{$config?($config['status']==0?'checked':''):''}}>
+                                    <span class="form-check-label">{{translate('messages.inactive')}}</span>
+                                </label>
+                            </div>
+                            <div class="text-right mt-4 pt-2 mr-2">
+                                <button type="submit" class="btn btn--primary">{{translate('messages.save')}}</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header border-0 pb-0 pt-4">
+                        <h5 class="card-title">
+                            <span>{{translate('payment_method')}}</span>
+                        </h5>
+                    </div>
+                    <div class="card-body pt-3">
                         @php($digital_payment=\App\CentralLogics\Helpers::get_business_settings('digital_payment'))
                         <form action="{{route('admin.business-settings.payment-method-update',['digital_payment'])}}"
                               method="post">
@@ -85,6 +116,7 @@
                     </div>
                 </div>
             </div>
+
         </div>
 
         <div class="row digital_payment_methods mt-3 g-3">

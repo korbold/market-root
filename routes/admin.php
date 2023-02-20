@@ -330,6 +330,7 @@ Route::group(['namespace' => 'Admin', 'as' => 'admin.'], function () {
             Route::get('status/{id}/{status}', 'ZoneController@status')->name('status');
             Route::get('digital-payment/{id}/{digital_payment}', 'ZoneController@digital_payment')->name('digital-payment');
             Route::get('cash-on-delivery/{id}/{cash_on_delivery}', 'ZoneController@cash_on_delivery')->name('cash-on-delivery');
+            Route::get('transfer_payment/{id}/{transfer_payment}', 'ZoneController@transfer_payment')->name('transfer_payment');
             Route::post('search', 'ZoneController@search')->name('search');
             Route::get('export/{type}', 'ZoneController@export')->name('export');
             Route::get('zone-filter/{id}', 'ZoneController@zone_filter')->name('zonefilter');

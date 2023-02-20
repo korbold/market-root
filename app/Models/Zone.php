@@ -20,6 +20,7 @@ class Zone extends Model
         'status' => 'integer',
         'cash_on_delivery' => 'boolean',
         'digital_payment' => 'boolean',
+        'transfer_payment' => 'boolean',
     ];
 
     public function stores()

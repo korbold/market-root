@@ -1220,6 +1220,14 @@
                                                     {{ translate('messages.deliveryman') }}
                                                 </span>
                                             </label>
+                                            <label class="form-check form--check mr-2 mr-md-4">
+                                                <input class="form-check-input" type="radio" value="admin"
+                                                    name="order_confirmation_model" id="order_confirmation_model2"
+                                                    {{ $order_confirmation_model == 'admin' ? 'checked' : '' }}>
+                                                <span class="form-check-label">
+                                                    {{ translate('messages.admin') }}
+                                                </span>
+                                            </label>
                                         </div>
                                     </div>
                                 </div>

@@ -27,13 +27,14 @@ class ConfigController extends Controller
 
     public function configuration()
     {
-        $key = ['currency_code','cash_on_delivery','digital_payment','default_location','free_delivery_over','business_name','logo','address','phone','email_address','country','currency_symbol_position','app_minimum_version_android','app_url_android','app_minimum_version_ios','app_url_ios','customer_verification','schedule_order','order_delivery_verification','per_km_shipping_charge','minimum_shipping_charge','show_dm_earning','canceled_by_deliveryman','canceled_by_store','timeformat','toggle_veg_non_veg','toggle_dm_registration','toggle_store_registration','schedule_order_slot_duration','parcel_per_km_shipping_charge','parcel_minimum_shipping_charge','web_app_landing_page_settings','footer_text','landing_page_links','loyalty_point_exchange_rate', 'loyalty_point_item_purchase_point', 'loyalty_point_status', 'loyalty_point_minimum_point', 'wallet_status', 'dm_tips_status', 'ref_earning_status','ref_earning_exchange_rate','refund_active_status','refund','cancelation','shipping_policy','prescription_order_status','tax_included','icon'];
+        $key = ['currency_code','cash_on_delivery','transfer_payment','digital_payment','default_location','free_delivery_over','business_name','logo','address','phone','email_address','country','currency_symbol_position','app_minimum_version_android','app_url_android','app_minimum_version_ios','app_url_ios','customer_verification','schedule_order','order_delivery_verification','per_km_shipping_charge','minimum_shipping_charge','show_dm_earning','canceled_by_deliveryman','canceled_by_store','timeformat','toggle_veg_non_veg','toggle_dm_registration','toggle_store_registration','schedule_order_slot_duration','parcel_per_km_shipping_charge','parcel_minimum_shipping_charge','web_app_landing_page_settings','footer_text','landing_page_links','loyalty_point_exchange_rate', 'loyalty_point_item_purchase_point', 'loyalty_point_status', 'loyalty_point_minimum_point', 'wallet_status', 'dm_tips_status', 'ref_earning_status','ref_earning_exchange_rate','refund_active_status','refund','cancelation','shipping_policy','prescription_order_status','tax_included','icon'];
 
         $settings =  array_column(BusinessSetting::whereIn('key',$key)->get()->toArray(), 'value', 'key');
 
         $currency_symbol = Currency::where(['currency_code' => Helpers::currency_code()])->first()->currency_symbol;
         $cod = json_decode($settings['cash_on_delivery'], true);
         $digital_payment = json_decode($settings['digital_payment'], true);
+        $transfer_payment = json_decode($settings['transfer_payment'], true);
         $default_location=isset($settings['default_location'])?json_decode($settings['default_location'], true):0;
         $free_delivery_over = $settings['free_delivery_over'];
         $free_delivery_over = isset($free_delivery_over)?(float)$free_delivery_over:$free_delivery_over;
@@ -102,6 +103,7 @@ class ConfigController extends Controller
             'order_delivery_verification' => (boolean)$settings['order_delivery_verification'],
             'cash_on_delivery' => (boolean)($cod['status'] == 1 ? true : false),
             'digital_payment' => (boolean)($digital_payment['status'] == 1 ? true : false),
+            'transfer_payment' => (boolean)($transfer_payment['status'] == 1 ? true : false),
             'per_km_shipping_charge' => (double)$settings['per_km_shipping_charge'],
             'minimum_shipping_charge' => (double)$settings['minimum_shipping_charge'],
             'free_delivery_over'=>$free_delivery_over,
@@ -156,7 +158,7 @@ class ConfigController extends Controller
             return response()->json(['errors' => Helpers::error_processor($validator)], 403);
         }
         $point = new Point($request->lat,$request->lng);
-        $zones = Zone::with('modules')->contains('coordinates', $point)->latest()->get(['id', 'status', 'cash_on_delivery', 'digital_payment']);
+        $zones = Zone::with('modules')->contains('coordinates', $point)->latest()->get(['id', 'status', 'cash_on_delivery', 'digital_payment', 'transfer_payment']);
         if(count($zones)<1)
         {
             return response()->json([
