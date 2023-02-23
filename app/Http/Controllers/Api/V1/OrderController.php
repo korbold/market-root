@@ -220,7 +220,7 @@ class OrderController extends Controller
         $order->user_id = $request->user()->id;
         $order->order_amount = $request['order_amount'];
         $order->payment_status = $request['payment_method'] == 'wallet' ? 'paid' : 'unpaid';
-        $order->order_status = $request['payment_method'] == 'digital_payment' ? 'failed' : ($request->payment_method == 'wallet' ? 'confirmed' : ($request->payment_method == 'transfer_payment' ?'pending': 'confirmed'));
+        $order->order_status = $request['payment_method'] == 'digital_payment' ? 'failed' : ($request->payment_method == 'wallet' ? 'confirmed' : 'pending');
         $order->coupon_code = $request['coupon_code'];
         $order->payment_method = $request->payment_method;
         $order->transaction_reference = null;
