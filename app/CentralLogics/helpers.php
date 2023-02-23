@@ -623,7 +623,7 @@ class Helpers
         if(!request()->is('/api*')){
             $currency = session()->get('currency_code');
         }
-       
+
         return $currency;
     }
 
@@ -1158,7 +1158,7 @@ class Helpers
 
         try {
 
-            if(($order->payment_method == 'cash_on_delivery' && $order->order_status == 'pending' )||($order->payment_method != 'cash_on_delivery' && $order->order_status == 'confirmed' )){
+            if(($order->payment_method == 'transfer_payment' && $order->order_status == 'pending')||( $order->payment_method == 'cash_on_delivery' && $order->order_status == 'pending' )||($order->payment_method != 'cash_on_delivery' && $order->order_status == 'confirmed' )){
                 $data = [
                     'title' => translate('messages.order_push_title'),
                     'description' => translate('messages.new_order_push_description'),
