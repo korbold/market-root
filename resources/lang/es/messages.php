@@ -2537,4 +2537,5 @@
   'Want to change tranfer payment for this zone ?' => 'Want to change tranfer payment for this zone  ',
   'transfer payment' => 'Transfer payment',
   'Order Type' => 'Order Type',
+  'Comida' => 'Comida',
 );

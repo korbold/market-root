@@ -1244,11 +1244,11 @@ class Helpers
                         'image' => '',
                     ];
                     if($order->zone){
-
                         self::send_push_notif_to_topic($data, $order->zone->deliveryman_wise_topic, 'order_request');
+
                     }
                 }
-                self::send_push_notif_to_topic($data, 'admin_message', 'order_request', url('/').'/admin/order/list/all');
+                // self::send_push_notif_to_topic($data, 'admin_message', 'order_request', url('/').'/admin/order/list/all');
             }
 
             if ($order->order_type == 'parcel' && in_array($order->order_status, ['pending', 'confirmed'])) {
@@ -1264,7 +1264,7 @@ class Helpers
 
                     self::send_push_notif_to_topic($data, $order->zone->deliveryman_wise_topic, 'order_request');
                 }
-                self::send_push_notif_to_topic($data, 'admin_message', 'order_request');
+                // self::send_push_notif_to_topic($data, 'admin_message', 'order_request');
             }
 
             if ($order->order_type == 'delivery' && !$order->scheduled && $order->order_status == 'pending' && $order->payment_method == 'cash_on_delivery' && config('order_confirmation_model') == 'store') {
@@ -1281,7 +1281,7 @@ class Helpers
                     self::send_push_notif_to_device($order->store->vendor->firebase_token, $data);
                     $web_push_link = url('/').'/store-panel/order/list/all';
                     self::send_push_notif_to_topic($data, "store_panel_{$order->store_id}_message", 'new_order', $web_push_link);
-                    self::send_push_notif_to_topic($data, 'admin_message', 'order_request');
+                    // self::send_push_notif_to_topic($data, 'admin_message', 'order_request');
                     DB::table('user_notifications')->insert([
                         'data' => json_encode($data),
                         'vendor_id' => $order->store->vendor_id,
