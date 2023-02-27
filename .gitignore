@@ -1,8 +1,8 @@
 /node_modules
+/storage/app/public/*.png
 /public/hot
 /public/storage
-/storage/app/public/*.png
-/storage/app/public
+/storage/*.key
 /vendor
 .env
 .env.backup
