@@ -41,6 +41,7 @@ return [
             'root' => storage_path('app/public'),
             'url' => env('APP_URL').'storage/public',
             'visibility' => 'public',
+            'expires' => 'null',
         ],
 
         's3' => [
