@@ -4,7 +4,6 @@
         "builder": "HEROKU",
         "watchPatterns": [
             "//storage/app/public/**"
-
         ]
     },
     "deploy": {
