@@ -1793,7 +1793,7 @@
   'Feature title' => 'Título del artículo',
   'Feature description' => 'Descripción',
   'Promotions' => 'Promociones',
-  'Your' => 'Su',
+  'Your' => '',
   'All Service' => 'Todos los servicios',
   'in one field' => 'En un campo',
   'welcome_back' => 'Bienvenido de nuevo',
