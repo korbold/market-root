@@ -1888,7 +1888,7 @@ class Helpers
             $lang = session('local');
         } else {
             $data = Helpers::get_business_settings('language');
-            $code = 'en';
+            $code = 'es';
             $direction = 'ltr';
             foreach ($data as $ln) {
                 if (is_array($ln) && array_key_exists('default', $ln) && $ln['default']) {
