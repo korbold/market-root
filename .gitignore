@@ -9,6 +9,8 @@ Homestead.yaml
 npm-debug.log
 yarn-error.log
 error_log
-# hey ass
+/public/hot
+/public/storage
+/storage/app/public/*.png
 
 
